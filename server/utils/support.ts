@@ -2,7 +2,7 @@
 // O valor pode ser um link completo (wa.me/message/..., https://...) OU só o número.
 
 // Default usado quando o admin ainda não configurou nada.
-export const DEFAULT_SUPPORT_HREF = 'https://wa.me/message/OH4WKRTTXBF2D1'
+export const DEFAULT_SUPPORT_HREF = 'https://wa.me/5571993887915'
 
 // Mensagem pré-preenchida usada apenas quando o valor é um número solto.
 const PREFILL_MESSAGE = 'Oi, preciso desbloquear meu aplicativo'

@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 // Link de suporte configurável pelo admin (/api/settings/support). Fallback usa o link padrão.
-const FALLBACK_SUPPORT_LINK = "https://wa.me/message/OH4WKRTTXBF2D1";
+const FALLBACK_SUPPORT_LINK = "https://wa.me/5571993887915";
 const supportLink = ref(FALLBACK_SUPPORT_LINK);
 
 const { logout } = useAuth();
