@@ -9,7 +9,7 @@
                                 name="ph:crown-simple-bold"
                                 class="crown-icon"
                             />
-                            <span>Rainha da Bet</span>
+                            <span>{{ appConfig.brand.name }}</span>
                         </div>
                     </div>
 
@@ -118,6 +118,7 @@
 <script setup lang="ts">
 import { CHECKOUT_URLS } from "../constants/checkoutLinks";
 
+const { config: appConfig } = useVisualConfig();
 const { showModal, checking, error, checkSubscription, dismissModal } =
     useSubscription();
 const { requestAccess, sending } = useAccessRequest();
@@ -186,7 +187,11 @@ const handleRequest = async () => {
 }
 
 .modal-header {
-    background: linear-gradient(135deg, #2a0018 0%, #001a10 100%);
+    background: linear-gradient(
+        135deg,
+        rgba(var(--color-primary-rgb), 0.18) 0%,
+        rgba(var(--color-primary-rgb), 0.06) 100%
+    );
     border-bottom: 1px solid #1a1a1a;
     padding: 20px 24px;
 }
@@ -202,7 +207,7 @@ const handleRequest = async () => {
 
 .crown-icon {
     font-size: 24px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .modal-body {
@@ -252,7 +257,7 @@ const handleRequest = async () => {
 }
 
 .email-input:focus {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
 }
 
 .email-input::placeholder {
@@ -286,7 +291,7 @@ const handleRequest = async () => {
     gap: 8px;
     width: 100%;
     padding: 14px;
-    background: #fb65a6;
+    background: var(--color-primary);
     color: #000;
     font-size: 15px;
     font-weight: 700;
@@ -297,7 +302,7 @@ const handleRequest = async () => {
 }
 
 .btn-verificar:hover:not(:disabled) {
-    background: #e2549a;
+    background: var(--color-primary-dark);
 }
 
 .btn-verificar:disabled {
@@ -330,8 +335,8 @@ const handleRequest = async () => {
     width: 100%;
     padding: 13px;
     background: transparent;
-    border: 1px solid #fb65a6;
-    color: #fb65a6;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
     font-size: 14px;
     font-weight: 700;
     border-radius: 10px;
@@ -340,7 +345,7 @@ const handleRequest = async () => {
 }
 
 .btn-solicitar:hover:not(:disabled) {
-    background: rgba(251, 101, 166, 0.08);
+    background: rgba(var(--color-primary-rgb), 0.08);
 }
 
 .btn-solicitar:disabled {
@@ -372,8 +377,8 @@ const handleRequest = async () => {
     width: 100%;
     padding: 14px;
     background: transparent;
-    border: 1px solid #fb65a6;
-    color: #fb65a6;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
     font-size: 15px;
     font-weight: 700;
     border-radius: 10px;
@@ -383,7 +388,7 @@ const handleRequest = async () => {
 }
 
 .btn-assinar:hover {
-    background: rgba(251, 101, 166, 0.08);
+    background: rgba(var(--color-primary-rgb), 0.08);
 }
 
 .checkout-indisponivel {

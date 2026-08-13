@@ -3,7 +3,7 @@
         <div v-if="isLoading" class="page-loader">
             <div class="loader-content">
                 <div class="loader-logo">
-                    <img src="/logo.png" alt="Rainha da Bet" />
+                    <AppLogo />
                 </div>
                 <div class="loader-spinner">
                     <div class="spinner-ring"></div>
@@ -89,12 +89,12 @@ nuxtApp.hook("page:finish", () => {
 }
 
 .spinner-ring:nth-child(1) {
-    border-top-color: #fb65a6;
+    border-top-color: var(--color-primary);
     animation-delay: 0s;
 }
 
 .spinner-ring:nth-child(2) {
-    border-right-color: #fb65a6;
+    border-right-color: var(--color-primary);
     animation-delay: 0.15s;
     width: 80%;
     height: 80%;
@@ -103,7 +103,7 @@ nuxtApp.hook("page:finish", () => {
 }
 
 .spinner-ring:nth-child(3) {
-    border-bottom-color: #fb65a6;
+    border-bottom-color: var(--color-primary);
     animation-delay: 0.3s;
     width: 60%;
     height: 60%;

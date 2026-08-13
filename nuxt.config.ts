@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
-        { rel: 'icon', type: 'image/png', href: '/logo.png' }
+        { rel: 'icon', type: 'image/svg+xml', href: '/media/melyn-mark.svg' }
       ]
     }
   },

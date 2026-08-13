@@ -2,7 +2,7 @@
     <div class="login-page">
         <div class="login-container">
             <div class="login-header">
-                <img src="/logo.png" alt="Rainha da Bet" class="logo" />
+                <AppLogo class="logo" />
                 <p class="subtitle">Acesse sua conta</p>
             </div>
 
@@ -163,7 +163,7 @@ const handleLogin = async () => {
     background-color: #111111;
     border-radius: 16px;
     border: 1px solid #222222;
-    box-shadow: 0 20px 60px rgba(251, 101, 166, 0.1);
+    box-shadow: 0 20px 60px rgba(var(--color-primary-rgb), 0.1);
 }
 
 .login-header {
@@ -219,7 +219,7 @@ const handleLogin = async () => {
 }
 
 .toggle-btn.active {
-    background: linear-gradient(135deg, #fb65a6 0%, #fb65a6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
     color: #000;
 }
 
@@ -244,7 +244,7 @@ const handleLogin = async () => {
 
 .input-icon {
     font-size: 16px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .form-group input[type="email"],
@@ -264,8 +264,8 @@ const handleLogin = async () => {
 .form-group input[type="email"]:focus,
 .form-group input[type="password"]:focus,
 .form-group input[type="text"]:focus {
-    border-color: #fb65a6;
-    box-shadow: 0 0 0 3px rgba(251, 101, 166, 0.15);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
 }
 
 .form-group input::placeholder {
@@ -298,7 +298,7 @@ const handleLogin = async () => {
 }
 
 .toggle-password:hover {
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .toggle-password :deep(svg) {
@@ -323,7 +323,7 @@ const handleLogin = async () => {
 }
 
 .link {
-    color: #fb65a6;
+    color: var(--color-primary);
     text-decoration: none;
     font-size: 14px;
     transition: opacity 0.2s ease;
@@ -337,7 +337,7 @@ const handleLogin = async () => {
 .btn-login {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #fb65a6 0%, #fb65a6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
     border: none;
     border-radius: 10px;
     color: #000000;
@@ -367,7 +367,7 @@ const handleLogin = async () => {
 
 .btn-login:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(251, 101, 166, 0.35);
+    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .btn-login:active:not(:disabled) {
@@ -404,10 +404,10 @@ const handleLogin = async () => {
     justify-content: center;
     gap: 8px;
     padding: 12px 16px;
-    background: rgba(251, 101, 166, 0.08);
-    border: 1px solid rgba(251, 101, 166, 0.35);
+    background: rgba(var(--color-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.35);
     border-radius: 10px;
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
@@ -415,8 +415,8 @@ const handleLogin = async () => {
 }
 
 .create-link:hover {
-    background: rgba(251, 101, 166, 0.15);
-    border-color: #fb65a6;
+    background: rgba(var(--color-primary-rgb), 0.15);
+    border-color: var(--color-primary);
 }
 
 .create-link :deep(svg) {
@@ -427,15 +427,15 @@ const handleLogin = async () => {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(251, 101, 166, 0.1);
-    border: 1px solid rgba(251, 101, 166, 0.3);
+    background: rgba(var(--color-primary-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 20px;
 }
 
 .info-banner :deep(svg) {
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 18px;
     flex-shrink: 0;
 }
@@ -447,7 +447,7 @@ const handleLogin = async () => {
 }
 
 .info-banner strong {
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 /* Responsividade */

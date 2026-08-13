@@ -1,7 +1,7 @@
 import { MongoClient, type Db } from 'mongodb'
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'
-const DB_NAME = process.env.MONGO_DB_NAME || 'rainha_da_bet'
+const DB_NAME = process.env.MONGO_DB_NAME || 'melyn_cartas'
 
 let client: MongoClient | null = null
 let db: Db | null = null

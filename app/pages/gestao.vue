@@ -4,11 +4,7 @@
         <header class="header">
             <div class="header-left">
                 <NuxtLink to="/">
-                    <img
-                        src="/logo.png"
-                        alt="Rainha da Bet"
-                        class="header-logo"
-                    />
+                    <AppLogo class="header-logo" />
                 </NuxtLink>
             </div>
             <div class="header-right">
@@ -534,9 +530,11 @@
 </template>
 
 <script setup lang="ts">
-useHead({
-    title: "Gestão de Banca - Rainha da Bet",
-});
+const { config: appConfig } = useVisualConfig();
+
+useHead(() => ({
+    title: `Gestão de Banca - ${appConfig.value.brand.name}`,
+}));
 
 // Dados do componente
 const bancaInicial = ref(1000);
@@ -821,8 +819,8 @@ onMounted(() => {
 }
 
 .btn-back:hover {
-    border-color: #fb65a6;
-    color: #fb65a6;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .main-content {
@@ -854,7 +852,7 @@ onMounted(() => {
 .sphere-1 {
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, #fb65a6 0%, transparent 70%);
+    background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
     top: -300px;
     right: -200px;
 }
@@ -927,7 +925,7 @@ onMounted(() => {
 }
 
 .gradient-text {
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .page-subtitle {
@@ -1004,7 +1002,7 @@ onMounted(() => {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, #fb65a6, transparent);
+    background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
     animation: shimmer 3s infinite;
 }
 
@@ -1072,8 +1070,8 @@ onMounted(() => {
 }
 
 .banca-icon {
-    background-color: rgba(251, 101, 166, 0.2);
-    color: #fb65a6;
+    background-color: rgba(var(--color-primary-rgb), 0.2);
+    color: var(--color-primary);
 }
 
 .meta-icon {
@@ -1098,7 +1096,7 @@ onMounted(() => {
 }
 
 .input-field-container:focus-within {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
 }
 
 .input-prefix,
@@ -1154,7 +1152,7 @@ onMounted(() => {
 .calculate-button {
     width: 100%;
     padding: 18px 30px;
-    background: linear-gradient(135deg, #fb65a6 0%, #e2549a 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     border: none;
     border-radius: 16px;
     color: #000000;
@@ -1172,7 +1170,7 @@ onMounted(() => {
 
 .calculate-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(251, 101, 166, 0.4);
+    box-shadow: 0 10px 30px rgba(var(--color-primary-rgb), 0.4);
 }
 
 .button-glow {
@@ -1184,7 +1182,7 @@ onMounted(() => {
     height: 40px;
     background: radial-gradient(
         ellipse at center,
-        rgba(251, 101, 166, 0.6) 0%,
+        rgba(var(--color-primary-rgb), 0.6) 0%,
         transparent 70%
     );
     filter: blur(30px);
@@ -1206,7 +1204,7 @@ onMounted(() => {
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 24px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .tips-grid {
@@ -1232,13 +1230,13 @@ onMounted(() => {
 .tip-icon {
     width: 48px;
     height: 48px;
-    background: rgba(251, 101, 166, 0.1);
+    background: rgba(var(--color-primary-rgb), 0.1);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 22px;
 }
 
@@ -1598,7 +1596,7 @@ onMounted(() => {
 
 .target-input:focus {
     outline: none;
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
 }
 
 /* Day Actions */
@@ -1688,14 +1686,14 @@ onMounted(() => {
     width: 120px;
     height: 120px;
     margin: 0 auto 30px;
-    background: rgba(251, 101, 166, 0.1);
-    border: 2px solid rgba(251, 101, 166, 0.2);
+    background: rgba(var(--color-primary-rgb), 0.1);
+    border: 2px solid rgba(var(--color-primary-rgb), 0.2);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 50px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .empty-content h3 {

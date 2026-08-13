@@ -4,11 +4,7 @@
         <header class="header">
             <div class="header-left">
                 <NuxtLink to="/">
-                    <img
-                        src="/logo.png"
-                        alt="Rainha da Bet"
-                        class="header-logo"
-                    />
+                    <AppLogo class="header-logo" />
                 </NuxtLink>
             </div>
             <div class="header-right">
@@ -22,7 +18,7 @@
                     />
                 </div>
                 <button class="btn-deposit" @click="handleDepositClick">
-                    DEPOSITAR
+                    {{ appConfig.content.depositButton }}
                 </button>
                 <div class="profile-wrapper">
                     <div class="profile-icon" @click="toggleProfileDropdown">
@@ -68,14 +64,14 @@
             <aside class="sidebar">
                 <button v-if="!isPaid" class="btn-confirmar-compra" @click="handleSubscriptionClick">
                     <Icon name="ph:lock-open-bold" />
-                    Confirmar compra
+                    {{ appConfig.content.subscribeButton }}
                 </button>
 
-                <h2 class="sidebar-title">Notícias recentes</h2>
+                <h2 class="sidebar-title">{{ appConfig.content.newsTitle }}</h2>
 
                 <div class="news-card featured">
-                    <div class="news-badge">ÚLTIMAS</div>
-                    <h3 class="news-title-big">NOTÍCIAS</h3>
+                    <div class="news-badge">{{ appConfig.content.newsBadge }}</div>
+                    <h3 class="news-title-big">{{ appConfig.content.newsHeadline }}</h3>
                 </div>
 
                 <NuxtLink
@@ -145,7 +141,7 @@
                                 name="ph:sparkle-bold"
                                 class="title-icon"
                             />
-                            Inteligência Artificial Prime
+                            {{ appConfig.content.primeTitle }}
                         </h2>
                     </div>
                     <div class="games-grid">
@@ -188,7 +184,7 @@
                                 name="ph:crown-bold"
                                 class="title-icon title-icon-premium"
                             />
-                            Inteligência Artificial Premium
+                            {{ appConfig.content.premiumTitle }}
                         </h2>
                     </div>
                     <div class="games-grid">
@@ -235,7 +231,7 @@
                                 name="ph:lightning-fill"
                                 class="title-icon title-icon-claude"
                             />
-                            IA Claude – Operações Sem Gale
+                            {{ appConfig.content.claudeTitle }}
                         </h2>
                     </div>
                     <div class="games-grid">
@@ -276,7 +272,7 @@
 
                 <!-- Links Úteis -->
                 <div class="links-section">
-                    <h2 class="section-title">Links úteis</h2>
+                    <h2 class="section-title">{{ appConfig.content.linksTitle }}</h2>
                     <div class="links-grid">
                         <NuxtLink
                             v-for="(link, index) in usefulLinks"
@@ -303,7 +299,7 @@
                 <!-- Destaques -->
                 <div class="highlights-section">
                     <div class="highlights-header">
-                        <h2 class="section-title">Destaques</h2>
+                        <h2 class="section-title">{{ appConfig.content.highlightsTitle }}</h2>
                         <div class="highlights-nav">
                             <button class="nav-btn">
                                 <Icon name="ph:caret-left-bold" />
@@ -382,12 +378,21 @@ const {
     init: initSubscription,
 } = useSubscription();
 
-const checkoutUrl = CHECKOUT_URLS.main;
-const socialLinks = {
-    whatsapp: "https://chat.whatsapp.com/LtELxASK4F07hY2GShxVAv?s=cl&p=i&ilr=1",
-    instagram: "https://www.instagram.com/mariainvest_/",
-    telegram: "https://t.me/+bL3Px9mB3oJkNzdh",
-};
+const { config: appConfig, resolveAssetUrl } = useVisualConfig();
+
+// Links e textos vêm do painel /admin/visual; os valores do código são o fallback.
+const checkoutUrl = computed(
+    () => appConfig.value.links.checkout || CHECKOUT_URLS.main,
+);
+const socialLinks = computed(() => ({
+    whatsapp:
+        appConfig.value.links.whatsappCommunity ||
+        "https://chat.whatsapp.com/LtELxASK4F07hY2GShxVAv?s=cl&p=i&ilr=1",
+    instagram:
+        appConfig.value.links.instagram ||
+        "https://www.instagram.com/mariainvest_/",
+    telegram: appConfig.value.links.telegram || "https://t.me/+bL3Px9mB3oJkNzdh",
+}));
 
 const refreshSubscriptionAccess = async (force = false) => {
     if (!isAuthenticated.value) return;
@@ -409,13 +414,13 @@ onMounted(() => {
     window.addEventListener("pageshow", handleWindowFocus);
 });
 
-const banners = ref([
-    {
-        image: "/banners/ENTRE-NA-MINHA-COMUNIDADE-DUDA.png",
-        alt: "Entre na minha comunidade",
-        link: socialLinks.whatsapp,
-    },
-]);
+const banners = computed(() =>
+    appConfig.value.images.banners.map((image) => ({
+        image: resolveAssetUrl(image),
+        alt: appConfig.value.brand.name,
+        link: socialLinks.value.whatsapp,
+    })),
+);
 
 const currentBanner = ref(0);
 const showProfileDropdown = ref(false);
@@ -451,7 +456,7 @@ const handleDepositClick = () => {
 
 const handleSubscriptionClick = () => {
     if (!requireAuth()) return;
-    window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+    window.open(checkoutUrl.value, "_blank", "noopener,noreferrer");
 };
 
 const handleNewsClick = (event: Event, news: { href?: string; external?: boolean }) => {
@@ -514,7 +519,7 @@ onUnmounted(() => {
     window.removeEventListener("pageshow", handleWindowFocus);
 });
 
-const newsItems = ref([
+const newsItems = computed(() => [
     {
         title: "Nova estratégia liberada",
         description:
@@ -527,7 +532,7 @@ const newsItems = ref([
         description:
             "Confira o novo canal de lives com análises em tempo real.",
         icon: "ph:video-camera-bold",
-        href: socialLinks.telegram,
+        href: socialLinks.value.telegram,
         external: true,
     },
     {
@@ -541,7 +546,7 @@ const newsItems = ref([
         title: "Comunidade WhatsApp",
         description: "Participe da nossa comunidade exclusiva no WhatsApp.",
         icon: "ph:whatsapp-logo-bold",
-        href: socialLinks.whatsapp,
+        href: socialLinks.value.whatsapp,
         external: true,
     },
     {
@@ -600,12 +605,14 @@ const premiumGames = ref([
     },
 ]);
 
-const claudeGames = ref([
+const claudeGames = computed(() => [
     {
         id: "football-studio",
         name: "FOOTBALL STUDIO ENGLISH",
         image: "/games/football-studio.png",
-        checkoutUrl: CHECKOUT_URLS.legacySemGale,
+        checkoutUrl:
+            appConfig.value.links.checkoutSemGale ||
+            CHECKOUT_URLS.legacySemGale,
     },
 ]);
 
@@ -628,11 +635,11 @@ const handleLockedGameClick = (event: MouseEvent, gameId: string) => {
     }
 
     const game = claudeGames.value.find((item) => item.id === gameId);
-    const lockedCheckoutUrl = game?.checkoutUrl || checkoutUrl;
+    const lockedCheckoutUrl = game?.checkoutUrl || checkoutUrl.value;
     window.open(lockedCheckoutUrl, "_blank", "noopener,noreferrer");
 };
 
-const usefulLinks = ref([
+const usefulLinks = computed(() => [
     {
         name: "Gestão de Banca",
         icon: "ph:calculator-bold",
@@ -649,21 +656,21 @@ const usefulLinks = ref([
         name: "WhatsApp",
         icon: "ph:whatsapp-logo-bold",
         active: false,
-        href: socialLinks.whatsapp,
+        href: socialLinks.value.whatsapp,
         external: true,
     },
     {
         name: "Instagram",
         icon: "ph:instagram-logo-bold",
         active: false,
-        href: socialLinks.instagram,
+        href: socialLinks.value.instagram,
         external: true,
     },
     {
         name: "Telegram",
         icon: "ph:telegram-logo-bold",
         active: false,
-        href: socialLinks.telegram,
+        href: socialLinks.value.telegram,
         external: true,
     },
 ]);
@@ -721,11 +728,11 @@ const highlights = ref([
 
 .balance-icon {
     font-size: 18px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .balance-value {
-    color: #fb65a6;
+    color: var(--color-primary);
     font-weight: 600;
 }
 
@@ -737,12 +744,12 @@ const highlights = ref([
 }
 
 .balance-info:hover {
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .btn-deposit {
     padding: 12px 24px;
-    background: linear-gradient(135deg, #fb65a6 0%, #fb65a6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
     border: none;
     border-radius: 8px;
     color: #000000;
@@ -754,7 +761,7 @@ const highlights = ref([
 
 .btn-deposit:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(251, 101, 166, 0.4);
+    box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.4);
 }
 
 .profile-wrapper {
@@ -764,7 +771,7 @@ const highlights = ref([
 .profile-icon {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, #fb65a6 0%, #fb65a6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -869,10 +876,10 @@ const highlights = ref([
     gap: 8px;
     width: 100%;
     padding: 12px 16px;
-    background: rgba(251, 101, 166, 0.08);
-    border: 1px solid rgba(251, 101, 166, 0.3);
+    background: rgba(var(--color-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
     border-radius: 10px;
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -881,20 +888,24 @@ const highlights = ref([
 }
 
 .btn-confirmar-compra:hover {
-    background: rgba(251, 101, 166, 0.15);
-    border-color: #fb65a6;
+    background: rgba(var(--color-primary-rgb), 0.15);
+    border-color: var(--color-primary);
 }
 
 .sidebar-title {
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 16px;
 }
 
 .news-card.featured {
-    background: linear-gradient(135deg, #2a0018 0%, #3c0024 100%);
-    border: 1px solid #fb65a6;
+    background: linear-gradient(
+        135deg,
+        rgba(var(--color-primary-rgb), 0.18) 0%,
+        rgba(var(--color-primary-rgb), 0.3) 100%
+    );
+    border: 1px solid var(--color-primary);
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 16px;
@@ -902,7 +913,7 @@ const highlights = ref([
 }
 
 .news-badge {
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
@@ -912,7 +923,7 @@ const highlights = ref([
     font-size: 28px;
     font-weight: 800;
     color: #ffffff;
-    text-shadow: 0 0 20px rgba(251, 101, 166, 0.3);
+    text-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .news-item {
@@ -929,7 +940,7 @@ const highlights = ref([
 }
 
 .news-item:hover {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
     background-color: #1a1a1a;
 }
 
@@ -953,7 +964,7 @@ const highlights = ref([
 
 .news-icon-svg {
     font-size: 24px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .news-content {
@@ -961,7 +972,7 @@ const highlights = ref([
 }
 
 .news-title {
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 14px;
     font-weight: 600;
     margin: 0 0 4px 0;
@@ -1034,8 +1045,8 @@ const highlights = ref([
 }
 
 .carousel-btn:hover {
-    background-color: rgba(251, 101, 166, 0.3);
-    border-color: #fb65a6;
+    background-color: rgba(var(--color-primary-rgb), 0.3);
+    border-color: var(--color-primary);
 }
 
 .carousel-btn.prev {
@@ -1098,7 +1109,7 @@ const highlights = ref([
 
 .title-icon {
     font-size: 24px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .games-nav {
@@ -1119,8 +1130,8 @@ const highlights = ref([
 }
 
 .nav-btn:hover {
-    border-color: #fb65a6;
-    color: #fb65a6;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .games-grid {
@@ -1141,9 +1152,9 @@ const highlights = ref([
 }
 
 .game-card:hover {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(251, 101, 166, 0.2);
+    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .game-image {
@@ -1188,7 +1199,7 @@ const highlights = ref([
     height: 30px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.55);
-    border: 1px solid rgba(251, 101, 166, 0.6);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1198,7 +1209,7 @@ const highlights = ref([
 
 .lock-icon-corner {
     font-size: 16px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .game-unlock {
@@ -1213,7 +1224,7 @@ const highlights = ref([
 
 .unlock-icon {
     font-size: 12px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .game-info {
@@ -1237,7 +1248,7 @@ const highlights = ref([
 
 .provider-icon {
     font-size: 10px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 /* Permanent Lock (Premium / Claude) */
@@ -1293,12 +1304,12 @@ const highlights = ref([
 }
 
 .card-premium-locked:hover {
-    border-color: #ffb000;
+    border-color: var(--color-gold);
     box-shadow: 0 8px 25px rgba(255, 176, 0, 0.25);
 }
 
 .title-icon-premium {
-    color: #ffb000;
+    color: var(--color-gold);
 }
 
 /* Claude cards */
@@ -1320,12 +1331,12 @@ const highlights = ref([
 }
 
 .card-claude-locked:hover {
-    border-color: #c878ff;
+    border-color: var(--color-fire);
     box-shadow: 0 8px 25px rgba(200, 120, 255, 0.25);
 }
 
 .title-icon-claude {
-    color: #c878ff;
+    color: var(--color-fire);
 }
 
 .game-unlock {
@@ -1340,7 +1351,7 @@ const highlights = ref([
 .section-title {
     font-size: 18px;
     font-weight: 600;
-    color: #fb65a6;
+    color: var(--color-primary);
     margin: 0 0 16px 0;
 }
 
@@ -1364,12 +1375,12 @@ const highlights = ref([
 }
 
 .link-card:hover {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
     background-color: #1a1a1a;
 }
 
 .link-card.link-active {
-    background: linear-gradient(135deg, #fb65a6 0%, #00aa44 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #00aa44 100%);
     border-color: transparent;
 }
 
@@ -1380,7 +1391,7 @@ const highlights = ref([
 
 .link-icon {
     font-size: 20px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .link-text {
@@ -1418,9 +1429,9 @@ const highlights = ref([
 }
 
 .highlight-card:hover {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(251, 101, 166, 0.2);
+    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .highlight-card img {

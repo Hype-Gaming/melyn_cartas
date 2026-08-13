@@ -443,6 +443,7 @@ import { getCatalogadorQueries, getGameRouteConfig, resolveGameRouteId } from '.
 
 const route = useRoute()
 const { isAuthenticated } = useAuth()
+const { config: appConfig } = useVisualConfig()
 const { startGame, fetchGameConfig, gameSignalConfig, isLoading: isLoadingGame, error: gameError } = useGame()
 
 // ID do jogo baseado na rota
@@ -1454,7 +1455,7 @@ watch(isAuthenticated, (newVal) => {
 })
 
 useHead({
-  title: () => `${currentGame.value.name} - Rainha da Bet`
+  title: () => `${currentGame.value.name} - ${appConfig.value.brand.name}`
 })
 </script>
 
@@ -1663,7 +1664,7 @@ useHead({
 .possivel-entrada-header {
   padding: 4px 1rem;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(251, 101, 166, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .entrada-message {

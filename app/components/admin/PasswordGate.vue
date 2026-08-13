@@ -123,7 +123,7 @@ onMounted(() => emailInput.value?.focus());
     color: #fff;
     background: var(--adm-grad-accent);
     border-radius: 16px;
-    box-shadow: 0 10px 26px rgba(251, 101, 166, 0.35);
+    box-shadow: 0 10px 26px rgba(var(--color-primary-rgb), 0.35);
 }
 .adm-gate-card h1 { font-size: 21px; font-weight: 800; margin: 0; letter-spacing: -0.3px; }
 .adm-gate-card p { color: var(--adm-muted); font-size: 13.5px; margin: 0 0 6px; line-height: 1.5; }

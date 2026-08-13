@@ -242,7 +242,7 @@ watch(isModalOpen, (isOpen) => {
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(251, 101, 166, 0.15);
+    box-shadow: 0 20px 60px rgba(var(--color-primary-rgb), 0.15);
 }
 
 .modal-header {
@@ -265,7 +265,7 @@ watch(isModalOpen, (isOpen) => {
 
 .modal-title :deep(svg) {
     font-size: 24px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .close-btn {
@@ -311,13 +311,13 @@ watch(isModalOpen, (isOpen) => {
 }
 
 .amount-input-wrapper:focus-within {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
 }
 
 .currency {
     font-size: 24px;
     font-weight: 600;
-    color: #fb65a6;
+    color: var(--color-primary);
     margin-right: 8px;
 }
 
@@ -369,8 +369,8 @@ watch(isModalOpen, (isOpen) => {
 
 .quick-btn:hover {
     background: #222;
-    border-color: #fb65a6;
-    color: #fb65a6;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .error-message {
@@ -393,7 +393,7 @@ watch(isModalOpen, (isOpen) => {
     justify-content: center;
     gap: 8px;
     padding: 16px 24px;
-    background: linear-gradient(135deg, #fb65a6 0%, #fb65a6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
     border: none;
     border-radius: 10px;
     color: #000;
@@ -405,7 +405,7 @@ watch(isModalOpen, (isOpen) => {
 
 .submit-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(251, 101, 166, 0.35);
+    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .submit-btn:disabled {
@@ -443,7 +443,7 @@ watch(isModalOpen, (isOpen) => {
 }
 
 .payment-amount strong {
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .payment-id {
@@ -497,7 +497,7 @@ watch(isModalOpen, (isOpen) => {
     align-items: center;
     gap: 6px;
     padding: 12px 16px;
-    background: #fb65a6;
+    background: var(--color-primary);
     border: none;
     border-radius: 8px;
     color: #000;
@@ -509,7 +509,7 @@ watch(isModalOpen, (isOpen) => {
 }
 
 .copy-btn:hover {
-    background: #e2549a;
+    background: var(--color-primary-dark);
 }
 
 .instructions {
@@ -574,7 +574,7 @@ watch(isModalOpen, (isOpen) => {
 }
 
 .success-description strong {
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 /* Modal Transitions */

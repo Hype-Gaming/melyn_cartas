@@ -4,14 +4,14 @@
             <div class="card">
                 <div class="logo">
                     <Icon name="ph:crown-simple-bold" class="crown-icon" />
-                    <h1>Rainha da Bet</h1>
+                    <h1>{{ appConfig.brand.name }}</h1>
                 </div>
 
                 <div class="content">
                     <h2>Acesso Exclusivo</h2>
                     <p>
                         Você ainda não possui uma assinatura ativa para acessar
-                        a Rainha da Bet.
+                        a {{ appConfig.brand.name }}.
                     </p>
 
                     <div class="features">
@@ -99,6 +99,7 @@
 <script setup lang="ts">
 import { CHECKOUT_URLS } from "../constants/checkoutLinks";
 
+const { config: appConfig } = useVisualConfig();
 const { user, logout } = useAuth();
 const { checkSubscription } = useSubscription();
 const { requestAccess, sending } = useAccessRequest();
@@ -166,7 +167,7 @@ onUnmounted(() => {
     window.removeEventListener("pageshow", handleCheckoutReturn);
 });
 
-useHead({ title: "Assinar - Rainha da Bet" });
+useHead(() => ({ title: `Assinar - ${appConfig.value.brand.name}` }));
 </script>
 
 <style scoped>
@@ -203,7 +204,7 @@ useHead({ title: "Assinar - Rainha da Bet" });
 
 .crown-icon {
     font-size: 32px;
-    color: #fb65a6;
+    color: var(--color-primary);
 }
 
 .logo h1 {
@@ -252,7 +253,7 @@ useHead({ title: "Assinar - Rainha da Bet" });
 
 .feature :deep(svg) {
     font-size: 18px;
-    color: #fb65a6;
+    color: var(--color-primary);
     flex-shrink: 0;
 }
 
@@ -262,7 +263,7 @@ useHead({ title: "Assinar - Rainha da Bet" });
     justify-content: center;
     gap: 10px;
     padding: 16px 24px;
-    background: #fb65a6;
+    background: var(--color-primary);
     color: #000;
     font-size: 16px;
     font-weight: 700;
@@ -272,7 +273,7 @@ useHead({ title: "Assinar - Rainha da Bet" });
 }
 
 .btn-assinar:hover {
-    background: #e2549a;
+    background: var(--color-primary-dark);
 }
 
 .checkout-pendente {
@@ -301,7 +302,7 @@ useHead({ title: "Assinar - Rainha da Bet" });
 .btn-verificar {
     background: none;
     border: none;
-    color: #fb65a6;
+    color: var(--color-primary);
     font-size: 13px;
     cursor: pointer;
     text-decoration: underline;
@@ -344,8 +345,8 @@ useHead({ title: "Assinar - Rainha da Bet" });
     gap: 8px;
     padding: 14px 20px;
     background: transparent;
-    border: 1px solid #fb65a6;
-    color: #fb65a6;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
     font-size: 14px;
     font-weight: 700;
     border-radius: 10px;
@@ -354,7 +355,7 @@ useHead({ title: "Assinar - Rainha da Bet" });
 }
 
 .btn-solicitar:hover:not(:disabled) {
-    background: rgba(251, 101, 166, 0.08);
+    background: rgba(var(--color-primary-rgb), 0.08);
 }
 
 .btn-solicitar:disabled {

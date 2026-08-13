@@ -4,11 +4,7 @@
         <header class="header">
             <div class="header-left">
                 <NuxtLink to="/">
-                    <img
-                        src="/logo.png"
-                        alt="Rainha da Bet"
-                        class="header-logo"
-                    />
+                    <AppLogo class="header-logo" />
                 </NuxtLink>
             </div>
             <div class="header-right">
@@ -65,15 +61,16 @@
 </template>
 
 <script setup lang="ts">
-useHead({
-    title: "Aulas - Rainha da Bet",
-});
+const { config: appConfig } = useVisualConfig();
 
-const aulas = [
+useHead(() => ({
+    title: `Aulas - ${appConfig.value.brand.name}`,
+}));
+
+const aulas = computed(() => [
     {
         title: "Boas Vindas",
-        description:
-            "Introdução à Rainha da Bet e como aproveitar ao máximo a plataforma.",
+        description: `Introdução à ${appConfig.value.brand.name} e como aproveitar ao máximo a plataforma.`,
         embedUrl: "https://www.youtube.com/embed/l0ojyRnXFHw",
     },
     {
@@ -106,7 +103,7 @@ const aulas = [
             "Técnicas finais e dicas exclusivas para alavancar seus resultados.",
         embedUrl: "https://www.youtube.com/embed/kH58DsRpni4",
     },
-];
+]);
 </script>
 
 <style scoped>
@@ -148,8 +145,8 @@ const aulas = [
 }
 
 .btn-back:hover {
-    border-color: #fb65a6;
-    color: #fb65a6;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .content {
@@ -165,7 +162,7 @@ const aulas = [
 
 .title-icon {
     font-size: 48px;
-    color: #fb65a6;
+    color: var(--color-primary);
     margin-bottom: 16px;
 }
 
@@ -198,9 +195,9 @@ const aulas = [
 }
 
 .video-card:hover {
-    border-color: #fb65a6;
+    border-color: var(--color-primary);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(251, 101, 166, 0.15);
+    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.15);
 }
 
 .video-number {
@@ -209,7 +206,7 @@ const aulas = [
     left: 16px;
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, #fb65a6 0%, #e2549a 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     border-radius: 8px;
     display: flex;
     align-items: center;

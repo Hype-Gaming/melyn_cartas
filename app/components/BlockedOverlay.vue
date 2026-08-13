@@ -7,10 +7,15 @@
             </button>
 
             <img
-                src="/banners/ACESSO-BLOQUEADO-APP-DUDA.png"
-                alt="Acesso bloqueado"
+                :src="blockedImage"
+                :alt="appConfig.content.supportTitle"
                 class="blk-img"
             />
+
+            <div class="blk-copy">
+                <h2>{{ appConfig.content.supportTitle }}</h2>
+                <p>{{ appConfig.content.supportMessage }}</p>
+            </div>
 
             <a :href="supportLink" target="_blank" rel="noopener" class="blk-btn">
                 <Icon name="ph:whatsapp-logo-bold" />
@@ -24,11 +29,19 @@
 // Link de suporte configurável pelo admin (/api/settings/support). Fallback usa o link padrão.
 const FALLBACK_SUPPORT_LINK = "https://wa.me/5571993887915";
 const supportLink = ref(FALLBACK_SUPPORT_LINK);
+const { config: appConfig, resolveAssetUrl } = useVisualConfig();
+const blockedImage = computed(() =>
+    resolveAssetUrl(appConfig.value.images.blocked) || "/media/melyn-mark.svg",
+);
 
 const { logout } = useAuth();
 const { setBlocked } = useAccountBlocked();
 
 const loadSupportLink = async () => {
+    if (appConfig.value.links.whatsappSupport) {
+        supportLink.value = appConfig.value.links.whatsappSupport;
+        return;
+    }
     try {
         const res = await $fetch<{ href: string }>("/api/settings/support");
         if (res?.href) supportLink.value = res.href;
@@ -67,12 +80,16 @@ onUnmounted(() => {
     -webkit-backdrop-filter: blur(10px);
     font-family: "Manrope", sans-serif;
 }
+
+.blk-copy { text-align: center; }
+.blk-copy h2 { margin: 0 0 6px; color: var(--text-main); }
+.blk-copy p { margin: 0; color: var(--text-muted); }
 .blk-glow {
     position: absolute;
     inset: 0;
     pointer-events: none;
     background:
-        radial-gradient(50% 40% at 50% 0%, rgba(251, 101, 166, 0.18), transparent 60%),
+        radial-gradient(50% 40% at 50% 0%, rgba(var(--color-primary-rgb), 0.18), transparent 60%),
         radial-gradient(50% 40% at 50% 100%, rgba(255, 93, 108, 0.1), transparent 60%);
 }
 .blk-card {
@@ -81,7 +98,7 @@ onUnmounted(() => {
     width: 100%;
     max-width: 400px;
     background: #0e1320;
-    border: 1px solid #2a1622;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.22);
     border-radius: 20px;
     padding: 16px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);

@@ -9,11 +9,14 @@
             <header class="adm-topbar adm-fade-up">
                 <div class="adm-logo">
                     <Icon name="ph:shield-check-bold" class="adm-logo-icon" />
-                    <span>Painel Admin — Rainha da Bet</span>
+                    <span>Painel Admin — {{ appConfig.brand.name }}</span>
                 </div>
                 <div class="adm-topbar-right">
                     <NuxtLink to="/admin/webhook" class="adm-btn-ghost">
                         <Icon name="ph:plug-bold" /> Liberar acesso
+                    </NuxtLink>
+                    <NuxtLink to="/admin/visual" class="adm-btn-ghost">
+                        <Icon name="ph:palette-bold" /> Visual do app
                     </NuxtLink>
                     <span v-if="adminEmail" class="adm-email">{{ adminEmail }}</span>
                     <button class="adm-btn-ghost" @click="logout">
@@ -344,6 +347,8 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "admin" });
 
+const { config: appConfig } = useVisualConfig();
+
 interface AppUser {
     email: string;
     name: string | null;
@@ -641,7 +646,7 @@ const exportCsv = async () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "usuarios-rainha.csv";
+        a.download = "usuarios-melyn.csv";
         a.click();
         URL.revokeObjectURL(url);
     } catch {
@@ -669,7 +674,7 @@ onMounted(() => {
 });
 onUnmounted(() => window.removeEventListener("keydown", onKey));
 
-useHead({ title: "Painel Admin - Rainha da Bet" });
+useHead(() => ({ title: `Painel Admin - ${appConfig.value.brand.name}` }));
 </script>
 
 <style>
@@ -721,7 +726,7 @@ useHead({ title: "Painel Admin - Rainha da Bet" });
     font-size: 22px; color: #fff;
     background: var(--adm-grad-accent);
     border-radius: 10px; padding: 7px;
-    box-shadow: 0 6px 18px rgba(251, 101, 166, 0.35);
+    box-shadow: 0 6px 18px rgba(var(--color-primary-rgb), 0.35);
 }
 .adm-topbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .adm-email { font-size: 13px; color: var(--adm-muted); }
@@ -843,7 +848,7 @@ useHead({ title: "Painel Admin - Rainha da Bet" });
 }
 .adm-table td { padding: 11px 12px; border-bottom: 1px solid var(--adm-border-soft); vertical-align: middle; }
 .adm-table tbody tr { transition: background 0.15s ease; }
-.adm-table tbody tr:hover { background: rgba(251, 101, 166, 0.045); }
+.adm-table tbody tr:hover { background: rgba(var(--color-primary-rgb), 0.045); }
 .adm-table tbody tr:last-child td { border-bottom: none; }
 .adm-td-empty { text-align: center; color: var(--adm-muted); padding: 24px; }
 .adm-user { display: flex; align-items: center; gap: 10px; }

@@ -79,6 +79,6 @@ export default defineEventHandler(async (event) => {
 
   const csv = '﻿' + lines.join('\r\n')
   setHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
-  setHeader(event, 'Content-Disposition', 'attachment; filename="usuarios-rainha.csv"')
+  setHeader(event, 'Content-Disposition', 'attachment; filename="usuarios-melyn.csv"')
   return csv
 })

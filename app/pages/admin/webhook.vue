@@ -7,7 +7,7 @@
             <header class="adm-topbar adm-fade-up">
                 <div class="adm-logo">
                     <Icon name="ph:plug-bold" class="adm-logo-icon" />
-                    <span>Liberar acesso — Rainha da Bet</span>
+                    <span>Liberar acesso — {{ appConfig.brand.name }}</span>
                 </div>
                 <div class="adm-topbar-right">
                     <NuxtLink to="/admin" class="adm-btn-ghost">
@@ -83,6 +83,8 @@
 
 <script setup lang="ts">
 definePageMeta({ middleware: "admin" });
+
+const { config: appConfig } = useVisualConfig();
 
 interface AccessRequest {
     email: string;
@@ -182,7 +184,7 @@ useHead({ title: "Liberar acesso - Admin" });
 .adm-topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: -24px -28px 4px; padding: 18px 28px; background: rgba(7, 9, 15, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--adm-border-soft); }
 .adm-logo { display: flex; align-items: center; gap: 11px; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
 .adm-logo span { background: linear-gradient(92deg, #fff 30%, #ffc2de 75%, var(--adm-accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.adm-logo-icon { font-size: 22px; color: #fff; background: var(--adm-grad-accent); border-radius: 10px; padding: 7px; box-shadow: 0 6px 18px rgba(251, 101, 166, 0.35); }
+.adm-logo-icon { font-size: 22px; color: #fff; background: var(--adm-grad-accent); border-radius: 10px; padding: 7px; box-shadow: 0 6px 18px rgba(var(--color-primary-rgb), 0.35); }
 @media (max-width: 560px) { .adm-topbar { margin: -24px -28px 4px; padding: 14px 18px; } }
 .adm-btn-ghost { display: inline-flex; align-items: center; gap: 6px; background: var(--adm-panel); border: 1px solid var(--adm-border); color: var(--adm-muted); border-radius: 9px; padding: 8px 13px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; transition: all 0.2s var(--adm-ease); }
 .adm-btn-ghost:hover:not(:disabled) { border-color: var(--adm-accent); color: var(--adm-accent); }
