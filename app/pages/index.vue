@@ -297,7 +297,7 @@
                 </div>
 
                 <!-- Destaques -->
-                <div class="highlights-section">
+                <div v-if="appConfig.features.highlights" class="highlights-section">
                     <div class="highlights-header">
                         <h2 class="section-title">{{ appConfig.content.highlightsTitle }}</h2>
                         <div class="highlights-nav">
