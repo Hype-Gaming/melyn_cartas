@@ -2,6 +2,11 @@
 
 Scripts de deploy seguro para os apps Node/Nuxt (Nitro) rodando com PM2 + NGINX + Certbot.
 
+> **Deste repositório (`app.mrcartas.com`), o caminho normal é o deploy automático
+> por push na `main`** — veja [docs/deploy-vps.md](docs/deploy-vps.md). Os scripts
+> abaixo servem para deploy manual a partir de um pacote (ZIP/pasta) e para hotfix
+> de arquivo único.
+
 - `deploy-app.sh` — deploy completo de um app a partir de um ZIP/pasta.
 - `deploy-file.sh` — deploy de **um arquivo** específico (hotfix rápido).
 
@@ -9,6 +14,7 @@ Scripts de deploy seguro para os apps Node/Nuxt (Nitro) rodando com PM2 + NGINX 
 
 | chave       | PM2                          | porta | domínio                       | ecosystem |
 |-------------|------------------------------|-------|-------------------------------|-----------|
+| `mrcartas`  | `aplicativo-mrcartas`        | 3102  | https://app.mrcartas.com      | sim       |
 | `rainha`    | `aplicativo-rainha-da-bet`   | 3098  | https://app.rainhaclub.com    | sim       |
 | `irmandade` | `irmandade`                  | 3099  | https://app.irmandadebacbo.com| sim       |
 | `baccarat`  | `baccaratlegacy`             | 3100  | https://app.baccaratlegacy.com| não       |
