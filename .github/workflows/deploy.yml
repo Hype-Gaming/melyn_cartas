@@ -1,8 +1,11 @@
-name: Deploy to VPS
+name: CI/CD — app.mrcartas.com
 
-# Dispara ao dar push na main (merge da feature) e permite rodar manualmente.
+# CI roda em PR e em push na main. O deploy só acontece em push na main
+# (ou manualmente) e apenas se o build tiver passado.
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -12,9 +15,38 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: SSH + git pull na VPS
+  build:
+    name: CI — build do Nuxt
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22 + cache do npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      # Falha cedo se o bundle não foi gerado — evita um deploy que sobe vazio.
+      - name: Conferir artefato do build
+        run: test -f .output/server/index.mjs
+
+  deploy:
+    name: CD — deploy na VPS
+    needs: build
+    # PRs passam pelo CI mas nunca fazem deploy.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.mrcartas.com
     steps:
       # Só precisamos do repo no runner para ler o script remoto abaixo.
       - name: Checkout
@@ -43,3 +75,18 @@ jobs:
           PORT="${VPS_PORT:-22}"
           ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=yes \
             "$VPS_USER@$VPS_HOST" 'bash -s' < .github/scripts/vps-deploy.sh
+
+      - name: Healthcheck público
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 10); do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 https://app.mrcartas.com || echo 000)"
+            if [ "$code" = "200" ]; then
+              echo "OK: https://app.mrcartas.com respondeu HTTP 200"
+              exit 0
+            fi
+            echo "aguardando... (HTTP $code)"
+            sleep 5
+          done
+          echo "ERRO: https://app.mrcartas.com não respondeu 200"
+          exit 1
