@@ -56,6 +56,7 @@ export interface AppConfig {
     lessons: boolean
     ranking: boolean
     links: boolean
+    highlights: boolean
     management: boolean
     live: boolean
   }
@@ -126,7 +127,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   },
   features: {
     home: true, games: true, lessons: true, ranking: true,
-    links: true, management: true, live: true
+    links: true, highlights: true, management: true, live: true
   },
   menu: [
     { key: 'home', label: 'Início', icon: 'ph:house-bold', order: 1 },
