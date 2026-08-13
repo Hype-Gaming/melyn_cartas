@@ -1,11 +1,12 @@
-const CACHE_NAME = 'irmandade-club-v1';
+const CACHE_NAME = 'melyn-cartas-v1';
 const VERSION_URL = '/version.json';
 const CHECK_INTERVAL = 30000; // Verificar a cada 30 segundos
 
 const urlsToCache = [
   '/',
   '/auth/login',
-  '/images/logo.png',
+  '/media/melyn-mark.svg',
+  '/media/melyn-logo.svg',
   '/robots.txt'
 ];
 
@@ -144,8 +145,8 @@ self.addEventListener('message', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'Nova atualização disponível!',
-    icon: '/images/logo.png',
-    badge: '/images/logo.png',
+    icon: '/media/melyn-mark.svg',
+    badge: '/media/melyn-mark.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -154,7 +155,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('Irmandade Club', options)
+    self.registration.showNotification('Melyn Cartas', options)
   );
 });
 
