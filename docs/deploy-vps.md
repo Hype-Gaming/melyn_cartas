@@ -87,7 +87,7 @@ ADMIN_SESSION_SECRET=<string-longa-e-aleatoria>
 LASTLINK_WEBHOOK_SECRET=<token-secreto>
 
 # Mongo. A senha vai URL-encoded (@ vira %40, ! vira %21).
-MONGODB_URI=mongodb://melyn_user:<SENHA>@104.131.7.171:27017/melyn_cartas?authSource=melyn_cartas
+MONGODB_URI=mongodb://melyn_user:<SENHA_URL_SAFE>@127.0.0.1:27017/melyn_cartas?authSource=melyn_cartas
 MONGO_DB_NAME=melyn_cartas
 
 # Notificações push (Web Push / VAPID).
@@ -107,7 +107,7 @@ chmod 600 .env      # o arquivo tem segredos — só o dono lê
 ### Criar o usuário do Mongo (se ainda não existir)
 
 ```bash
-mongosh "mongodb://admin:<SENHA_ADMIN>@104.131.7.171:27017/admin?authSource=admin"
+mongosh "mongodb://127.0.0.1:27017/admin" --username admin --authenticationDatabase admin
 ```
 
 ```javascript
@@ -231,6 +231,11 @@ A renovação é automática (timer do systemd). Para conferir:
 
 ### 7.1 Chave SSH exclusiva do deploy
 
+Esta chave autoriza o **GitHub Actions a entrar na VPS**. Ela não é uma "Deploy
+key" do repositório GitHub e, portanto, não depende da política de deploy keys da
+organização. Como o repositório é público, a VPS não precisa de credencial para o
+`git fetch`.
+
 **Na VPS**, como o usuário que é dono de `/var/www/mrcartas`:
 
 ```bash
@@ -251,6 +256,9 @@ Em `Settings → Secrets and variables → Actions → New repository secret`:
 | `VPS_HOST` | IP ou hostname da VPS |
 | `VPS_USER` | usuário dono de `/var/www/mrcartas` |
 | `VPS_PORT` | porta SSH (opcional — o workflow assume `22`) |
+
+Cadastre os secrets no environment `production` ou diretamente no repositório.
+O workflow informa claramente quando um dos secrets obrigatórios está ausente.
 
 ### 7.3 Testar
 
@@ -277,13 +285,13 @@ push/PR na main
       └─ job "deploy" ── só em push/manual, e só se o build passou
                          │
                          ├─ SSH na VPS  →  .github/scripts/vps-deploy.sh
-                         │                 git reset --hard origin/main
+                         │                 git reset --hard <commit validado no CI>
                          │                 npm ci → npm run build
                          │                 pm2 startOrReload → pm2 save
-                         │                 healthcheck em localhost:3102
+                         │                 healthcheck em localhost:3102/api/app-config
                          │                 (falhou? rollback pro commit anterior)
                          │
-                         └─ healthcheck público em https://app.mrcartas.com
+                         └─ healthcheck público em /api/app-config
 ```
 
 Pontos que valem saber:
@@ -296,6 +304,8 @@ Pontos que valem saber:
   na VPS, o script volta para o commit anterior, rebuilda e sobe. O ar não fica
   quebrado por um push ruim.
 - **Deploys não se atropelam.** O `concurrency` serializa execuções do mesmo branch.
+- **O Mongo faz parte do healthcheck.** A pipeline só fica verde quando
+  `/api/app-config` responde `200`; carregar apenas o HTML não é considerado sucesso.
 - **`.env` e `node_modules` nunca são tocados** pelo `git reset --hard` (gitignored).
 
 ---
