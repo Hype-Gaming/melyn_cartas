@@ -1,7 +1,5 @@
-name: CI/CD — app.mrcartas.com
+name: CI/CD - app.mrcartas.com
 
-# CI roda em PR e em push na main. O deploy só acontece em push na main
-# (ou manualmente) e apenas se o build tiver passado.
 on:
   push:
     branches: [main]
@@ -9,20 +7,23 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Garante que dois deploys do mesmo branch não rodem ao mesmo tempo.
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: CI — build do Nuxt
+    name: CI - build do Nuxt
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node 22 + cache do npm
+      - name: Node 22 e cache do npm
         uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -34,21 +35,19 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Falha cedo se o bundle não foi gerado — evita um deploy que sobe vazio.
-      - name: Conferir artefato do build
+      - name: Conferir artefato
         run: test -f .output/server/index.mjs
 
   deploy:
-    name: CD — deploy na VPS
+    name: CD - deploy na VPS
     needs: build
-    # PRs passam pelo CI mas nunca fazem deploy.
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: production
       url: https://app.mrcartas.com
     steps:
-      # Só precisamos do repo no runner para ler o script remoto abaixo.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -59,34 +58,40 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           set -euo pipefail
+          test -n "$VPS_SSH_KEY" || { echo "Secret VPS_SSH_KEY ausente"; exit 1; }
+          test -n "$VPS_HOST" || { echo "Secret VPS_HOST ausente"; exit 1; }
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           PORT="${VPS_PORT:-22}"
           ssh-keyscan -p "$PORT" "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Deploy (git pull + build + pm2 reload na VPS)
+      - name: Deploy do commit validado
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
+          DEPLOY_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
+          test -n "$VPS_USER" || { echo "Secret VPS_USER ausente"; exit 1; }
           PORT="${VPS_PORT:-22}"
           ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" 'bash -s' < .github/scripts/vps-deploy.sh
+            "$VPS_USER@$VPS_HOST" "DEPLOY_COMMIT='$DEPLOY_COMMIT' bash -s" \
+            < .github/scripts/vps-deploy.sh
 
-      - name: Healthcheck público
+      - name: Healthcheck público da configuração
         run: |
           set -euo pipefail
           for _ in $(seq 1 10); do
-            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 https://app.mrcartas.com || echo 000)"
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 \
+              https://app.mrcartas.com/api/app-config || echo 000)"
             if [ "$code" = "200" ]; then
-              echo "OK: https://app.mrcartas.com respondeu HTTP 200"
+              echo "OK: API pública e Mongo responderam HTTP 200"
               exit 0
             fi
             echo "aguardando... (HTTP $code)"
             sleep 5
           done
-          echo "ERRO: https://app.mrcartas.com não respondeu 200"
+          echo "ERRO: /api/app-config não respondeu HTTP 200"
           exit 1

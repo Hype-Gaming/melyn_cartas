@@ -1,5 +1,9 @@
 <template>
-    <div id="app">
+    <div v-if="!visualReady" class="visual-bootstrap" role="status" aria-label="Carregando aparência">
+        <div class="visual-bootstrap-spinner"></div>
+    </div>
+
+    <div v-else id="app">
         <PageLoader />
         <NuxtPage />
         <div v-if="showMaintenance" class="maintenance-screen">
@@ -21,7 +25,7 @@ const { needsKyc, kycChecked, isAuthenticated, logout, fetchUserProfile } =
 const { send: sendHeartbeat } = useHeartbeat();
 const { isBlocked } = useAccountBlocked();
 const route = useRoute();
-const { config: appConfig, loadAppConfig, resolveAssetUrl } = useVisualConfig();
+const { config: appConfig, ready: visualReady, loadAppConfig, resolveAssetUrl } = useVisualConfig();
 
 const showMaintenance = computed(() =>
     appConfig.value.maintenance.active && !route.path.startsWith("/admin"),
@@ -110,6 +114,12 @@ body {
     color: var(--text-main);
 }
 
+/* Antes da configuração chegar, mantém somente um fundo neutro. */
+html:not(.visual-theme-ready),
+html:not(.visual-theme-ready) body {
+    background: #08090d;
+}
+
 body {
     font-family: "Manrope", "Space Grotesk", sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -119,6 +129,28 @@ body {
 #app {
     min-height: 100vh;
     background: transparent;
+}
+
+.visual-bootstrap {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+    display: grid;
+    place-items: center;
+    background: #08090d;
+}
+
+.visual-bootstrap-spinner {
+    width: 42px;
+    height: 42px;
+    border: 3px solid #282b35;
+    border-top-color: #f5f6fa;
+    border-radius: 50%;
+    animation: visual-bootstrap-spin .8s linear infinite;
+}
+
+@keyframes visual-bootstrap-spin {
+    to { transform: rotate(360deg); }
 }
 
 .maintenance-screen {
