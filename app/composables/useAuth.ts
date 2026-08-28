@@ -139,6 +139,11 @@ export const useAuth = () => {
     }
   }
 
+  const setKycRequired = (value = true) => {
+    authState.needsKyc = value
+    authState.kycChecked = true
+  }
+
   // Buscar perfil do usuário (inclui wallet/balance)
   const fetchUserProfile = async (): Promise<void> => {
     if (!authState.token || !authState.cookieKey) return
@@ -270,10 +275,12 @@ export const useAuth = () => {
         message = 'E-mail/CPF ou senha incorretos.'
       } else if (detail?.reason === 'user_not_found') {
         message = 'Usuário não encontrado.'
-      } else if (lastError?.statusCode === 401) {
-        message = 'Credenciais inválidas.'
-      } else if (lastError?.data?.message) {
-        message = lastError.data.message
+      } else if (lastError?.statusCode === 429 || lastError?.response?.status === 429) {
+        message = 'Muitas tentativas. Aguarde um momento.'
+      } else if (lastError?.statusCode === 503 || lastError?.response?.status === 503) {
+        message = 'O serviço de autenticação está indisponível. Aguarde dois minutos e tente novamente.'
+      } else if (lastError?.statusCode === 401 || lastError?.response?.status === 401) {
+        message = 'E-mail/CPF ou senha incorretos.'
       }
 
       error.value = message
@@ -284,7 +291,7 @@ export const useAuth = () => {
   }
 
   // Logout
-  const logout = async () => {
+  const logout = async (destination = '/auth/login') => {
     loading.value = true
 
     try {
@@ -308,7 +315,7 @@ export const useAuth = () => {
     } finally {
       clearAuth()
       loading.value = false
-      navigateTo('/auth/login')
+      await navigateTo(destination)
     }
   }
 
@@ -366,6 +373,7 @@ export const useAuth = () => {
     checkAuth,
     getAuthHeaders,
     clearAuth,
+    setKycRequired,
     fetchUserProfile
   }
 }

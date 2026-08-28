@@ -38,8 +38,8 @@
         <a
           :href="affiliateUrl"
           target="_blank"
+          rel="noopener noreferrer"
           class="kyc-button"
-          @click="handleRedirect"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -53,8 +53,8 @@
           Após a verificação ser aprovada, faça login novamente para acessar.
         </p>
         
-        <button class="logout-button" @click="handleLogout">
-          Sair e fazer login depois
+        <button class="logout-button" @click="emit('dismiss')">
+          Agora não
         </button>
       </div>
     </div>
@@ -64,45 +64,16 @@
 <script setup lang="ts">
 const { config: appConfig } = useVisualConfig()
 
-const props = defineProps<{
+defineProps<{
   show: boolean
 }>()
 
 const emit = defineEmits<{
-  logout: []
+  dismiss: []
 }>()
 
 const { brandName, affiliateUrl } = useAuth()
 
-const handleRedirect = () => {
-  // Redirecionar automaticamente após 500ms
-  setTimeout(() => {
-    window.open(affiliateUrl.value, '_blank')
-  }, 100)
-}
-
-const handleLogout = () => {
-  emit('logout')
-}
-
-// Redirecionar automaticamente após 3 segundos
-let redirectTimeout: ReturnType<typeof setTimeout> | null = null
-
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    redirectTimeout = setTimeout(() => {
-      window.open(affiliateUrl.value, '_blank')
-    }, 3000)
-  } else if (redirectTimeout) {
-    clearTimeout(redirectTimeout)
-  }
-})
-
-onUnmounted(() => {
-  if (redirectTimeout) {
-    clearTimeout(redirectTimeout)
-  }
-})
 </script>
 
 <style scoped>
