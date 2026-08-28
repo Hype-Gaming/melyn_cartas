@@ -10,12 +10,15 @@ export interface GameSignalConfig {
   signalCollection?: string
 }
 
+export type StartGameErrorCode = 'KYC_REQUIRED' | 'START_GAME_REJECTED' | 'SESSION_EXPIRED' | null
+
 export const useGame = () => {
-  const { token, cookieKey, clearAuth, apiBaseUrl, brandSlug, baseDomain } = useAuth()
+  const { token, cookieKey, clearAuth, brandSlug, user, setKycRequired } = useAuth()
   
   const gameUrl = ref<string>('')
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const errorCode = ref<StartGameErrorCode>(null)
   const gameSignalConfig = ref<GameSignalConfig | null>(null)
 
   /**
@@ -85,6 +88,7 @@ export const useGame = () => {
 
     isLoading.value = true
     error.value = null
+    errorCode.value = null
 
     try {
       const response = await $fetch<{
@@ -99,7 +103,8 @@ export const useGame = () => {
           }
         }
         message?: string
-      }>(`${apiBaseUrl.value}/api/start-game`, {
+        code?: Exclude<StartGameErrorCode, null>
+      }>('/api/routes/start-game', {
         method: 'GET',
         params: {
           slug,
@@ -109,8 +114,8 @@ export const useGame = () => {
         headers: {
           'Authorization': `Bearer ${token.value}`,
           'X-Brand-Slug': brandSlug.value,
-          'X-Base-Domain': baseDomain.value,
-          'X-Cactus-Cookie-Key': String(cookieKey.value || '')
+          'X-Cactus-Cookie-Key': String(cookieKey.value || ''),
+          'X-App-User-Email': user.value?.email || ''
         }
       })
 
@@ -130,15 +135,26 @@ export const useGame = () => {
         return response.payload.launchOptions.game_url
       }
 
-      error.value = response.message || 'Erro ao iniciar jogo'
+      errorCode.value = response.code || 'START_GAME_REJECTED'
+      error.value = 'Não foi possível abrir o jogo. Tente novamente ou fale com o suporte.'
       return null
     } catch (err: any) {
-      if (err?.statusCode === 401 || err?.response?.status === 401) {
+      const status = err?.statusCode || err?.response?.status
+      const code = err?.data?.data?.code || err?.data?.code
+      if (status === 401 || code === 'SESSION_EXPIRED') {
+        errorCode.value = 'SESSION_EXPIRED'
         clearAuth()
+        await navigateTo('/auth/login?reason=session_expired')
         return null
       }
-      console.error('Erro ao iniciar jogo:', err)
-      error.value = err.data?.message || err.message || 'Erro ao iniciar jogo'
+      if (code === 'KYC_REQUIRED') {
+        errorCode.value = 'KYC_REQUIRED'
+        error.value = 'Conclua a verificação da sua conta para abrir este jogo.'
+        setKycRequired(true)
+        return null
+      }
+      errorCode.value = 'START_GAME_REJECTED'
+      error.value = 'Não foi possível abrir o jogo. Tente novamente ou fale com o suporte.'
       return null
     } finally {
       isLoading.value = false
@@ -163,6 +179,7 @@ export const useGame = () => {
     gameUrl,
     isLoading,
     error,
+    errorCode,
     gameSignalConfig,
     startGame,
     fetchGameConfig,
