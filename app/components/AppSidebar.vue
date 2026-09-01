@@ -2,8 +2,7 @@
   <Teleport to="body"><button v-if="open" class="sidebar-overlay" type="button" aria-label="Fechar navegação" @click="closeDrawer" /></Teleport>
   <aside class="app-sidebar" :class="{ open }" aria-label="Barra lateral">
     <div class="brand-block">
-      <img v-if="logoVisible" :src="resolveAssetUrl(config.brand.logo)" :alt="config.brand.name" @error="logoVisible = false" />
-      <span v-else class="brand-fallback">{{ initials(config.brand.name) }}</span>
+      <img :src="sidebarLogo" :alt="config.brand.name" @error="useFallbackLogo" />
     </div>
 
     <template v-if="isAuthenticated">
@@ -30,8 +29,12 @@ const { config, resolveAssetUrl } = useVisualConfig()
 const { user, isAuthenticated, formattedBalance, profileLoading, fetchUserProfile, logout } = useAuth()
 const { openModal } = useDeposit()
 const { open, closeDrawer } = useSidebarDrawer()
-const logoVisible = ref(Boolean(config.value.brand.logo))
-watch(() => config.value.brand.logo, value => { logoVisible.value = Boolean(value) })
+const fallbackLogo = '/media/melyn-logo.svg'
+const sidebarLogo = ref(resolveAssetUrl(config.value.brand.logo) || fallbackLogo)
+watch(() => config.value.brand.logo, value => { sidebarLogo.value = resolveAssetUrl(value) || fallbackLogo })
+const useFallbackLogo = () => {
+  if (sidebarLogo.value !== fallbackLogo) sidebarLogo.value = fallbackLogo
+}
 const initials = (value: string) => value.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'MR'
 const refreshBalance = () => fetchUserProfile()
 </script>
@@ -40,8 +43,7 @@ const refreshBalance = () => fetchUserProfile()
 .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 90; display: flex; flex-direction: column; width: 288px; padding: 24px 18px; border-right: 1px solid var(--card-border); background: var(--bg-darker); color: var(--text-main); overflow-y: auto; }
 .brand-block { display: grid; place-items: center; min-height: 72px; margin-bottom: 18px; }
 .brand-block img { max-width: 190px; max-height: 68px; object-fit: contain; }
-.brand-fallback, .user-avatar { display: grid; place-items: center; border-radius: 12px; background: var(--color-primary); color: var(--bg-darker); font-weight: 900; }
-.brand-fallback { width: 58px; height: 58px; font-size: 21px; }
+.user-avatar { display: grid; place-items: center; border-radius: 12px; background: var(--color-primary); color: var(--bg-darker); font-weight: 900; }
 .user-card { display: grid; grid-template-columns: 1fr 34px; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--card-border); border-radius: 13px; background: var(--card-bg); color: var(--text-main); }
 .user-link { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 10px; min-width: 0; color: var(--text-main); text-decoration: none; }
 .user-avatar { width: 42px; height: 42px; }
