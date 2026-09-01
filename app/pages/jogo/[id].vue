@@ -464,6 +464,10 @@
 </template>
 
 <script setup lang="ts">
+// Tela cheia: o iframe do jogo precisa da largura toda, e a navegacao fica no
+// botao "Fechar Jogo". Sem isto a pagina herda o layout `default`, com a sidebar.
+definePageMeta({ layout: 'bare' })
+
 const route = useRoute()
 // Config tecnica do jogo: painel primeiro, constants/gameRoutes.ts como fallback.
 const { getCatalogadorQueries, getGameRouteConfig, resolveGameRouteId } = useGameRoutes()
@@ -492,13 +496,24 @@ const openBalanceGateCta = () => {
 
 type CanonicalWinner = 'Player' | 'Banker' | 'Tie'
 
-const outcomeMeta = computed(() => {
-  switch (gameId.value) {
+/**
+ * Fallback dos rotulos de resultado. Ficou aqui porque o painel ainda pode ter
+ * o jogo sem preencher; o que vem do config tem precedencia.
+ */
+const fallbackOutcomeMeta = (id: string) => {
+  switch (id) {
     case 'football-studio':
     case 'football-studio-ao-vivo':
       return {
         player: { label: 'Casa', letter: 'C' },
         banker: { label: 'Visitante', letter: 'V' },
+        tie: { label: 'Empate', letter: 'E' }
+      }
+    case 'futebol-brasileiro':
+      // Rotulos da propria mesa da GoodGame (tabela de pagamentos do jogo).
+      return {
+        player: { label: 'Casa', letter: 'C' },
+        banker: { label: 'Fora', letter: 'F' },
         tie: { label: 'Empate', letter: 'E' }
       }
     case 'dragon-tiger':
@@ -519,6 +534,26 @@ const outcomeMeta = computed(() => {
         banker: { label: 'Banker', letter: 'B' },
         tie: { label: 'Tie', letter: 'T' }
       }
+  }
+}
+
+const outcomeMeta = computed(() => {
+  const base = fallbackOutcomeMeta(gameId.value)
+  const managed = managedGame.value
+  if (!managed) return base
+  return {
+    player: {
+      label: managed.outcomePlayerLabel || base.player.label,
+      letter: managed.outcomePlayerLetter || base.player.letter
+    },
+    banker: {
+      label: managed.outcomeBankerLabel || base.banker.label,
+      letter: managed.outcomeBankerLetter || base.banker.letter
+    },
+    tie: {
+      label: managed.outcomeTieLabel || base.tie.label,
+      letter: managed.outcomeTieLetter || base.tie.letter
+    }
   }
 })
 

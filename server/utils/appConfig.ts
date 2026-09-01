@@ -128,6 +128,12 @@ export const normalizeAppConfig = (input: unknown): AppConfig => {
     signalUrl: wsUrl(game?.signalUrl),
     signalCollection: text(game?.signalCollection, '', 120),
     signalName: text(game?.signalName, '', 200),
+    outcomePlayerLabel: text(game?.outcomePlayerLabel, '', 40),
+    outcomePlayerLetter: text(game?.outcomePlayerLetter, '', 3),
+    outcomeBankerLabel: text(game?.outcomeBankerLabel, '', 40),
+    outcomeBankerLetter: text(game?.outcomeBankerLetter, '', 3),
+    outcomeTieLabel: text(game?.outcomeTieLabel, '', 40),
+    outcomeTieLetter: text(game?.outcomeTieLetter, '', 3),
     signalBalanceGate: {
       enabled: typeof game?.signalBalanceGate?.enabled === 'boolean' ? game.signalBalanceGate.enabled : undefined,
       minimumBalance: game?.signalBalanceGate?.minimumBalance == null ? undefined : number(game.signalBalanceGate.minimumBalance, config.signalBalanceGate.minimumBalance),
