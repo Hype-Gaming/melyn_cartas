@@ -49,7 +49,7 @@
                             <Icon name="ph:sign-out-bold" />
                             <span>Sair</span>
                         </button>
-                        <button v-else class="dropdown-item" @click="redirectToLogin">
+                        <button v-else class="dropdown-item" @click="redirectToLogin()">
                             <Icon name="ph:sign-in-bold" />
                             <span>Entrar</span>
                         </button>
@@ -150,7 +150,8 @@
                             :key="index"
                             :href="game.href"
                             class="game-card"
-                            @click="guardRoute"
+                            :class="{ 'is-managed-locked': game.status !== 'enabled' }"
+                            @click="handleManagedGameClick($event, game)"
                         >
                             <div class="game-image">
                                 <img
@@ -191,12 +192,12 @@
                         <a
                             v-for="(game, index) in premiumGames"
                             :key="index"
-                            :href="isSubscribed ? `/jogo/${game.id}` : checkoutUrl"
+                            :href="isSubscribed ? game.href : checkoutUrl"
                             :target="isSubscribed ? '_self' : '_blank'"
                             rel="noopener noreferrer"
                             class="game-card card-premium-locked"
                             :class="{ 'is-locked': !isPaid }"
-                            @click="handleLockedGameClick($event, game.id)"
+                            @click="handleManagedGameClick($event, game)"
                         >
                             <div class="game-image">
                                 <img
@@ -238,12 +239,12 @@
                         <a
                             v-for="(game, index) in claudeGames"
                             :key="index"
-                            :href="isSubscribed ? `/jogo/${game.id}` : game.checkoutUrl"
+                            :href="isSubscribed ? game.href : game.checkoutUrl"
                             :target="isSubscribed ? '_self' : '_blank'"
                             rel="noopener noreferrer"
                             class="game-card card-claude-locked"
                             :class="{ 'is-locked': !isPaid }"
-                            @click="handleLockedGameClick($event, game.id)"
+                            @click="handleManagedGameClick($event, game)"
                         >
                             <div class="game-image">
                                 <img
@@ -271,6 +272,15 @@
                 </div>
 
                 <!-- Links Úteis -->
+                <section v-if="appConfig.features.ranking" class="ranking-section">
+                    <h2 class="section-title">Ranking</h2>
+                    <div v-if="rankingBanners.length" class="ranking-banners">
+                        <a v-for="banner in rankingBanners" :key="banner.id" :href="banner.targetUrl || undefined" :target="banner.openInNewTab ? '_blank' : '_self'" :rel="banner.openInNewTab ? 'noopener noreferrer' : undefined">
+                            <picture><source v-if="banner.mobileImageUrl" media="(max-width: 640px)" :srcset="resolveAssetUrl(banner.mobileImageUrl)" /><img :src="resolveAssetUrl(banner.desktopImageUrl)" :alt="banner.altText" /></picture>
+                        </a>
+                    </div>
+                </section>
+
                 <div class="links-section">
                     <h2 class="section-title">{{ appConfig.content.linksTitle }}</h2>
                     <div class="links-grid">
@@ -433,15 +443,16 @@ const toggleProfileDropdown = () => {
     showProfileDropdown.value = !showProfileDropdown.value;
 };
 
-const redirectToLogin = () => {
+const redirectToLogin = (destination = '/') => {
     showProfileDropdown.value = false;
-    return navigateTo("/auth/login");
+    return navigateTo({ path: "/auth/login", query: { redirect: destination } });
 };
 
 const requireAuth = (event?: Event) => {
     if (isAuthenticated.value) return true;
     event?.preventDefault();
-    redirectToLogin();
+    const href = event?.currentTarget instanceof HTMLAnchorElement ? event.currentTarget.getAttribute('href') : null;
+    redirectToLogin(href?.startsWith('/') ? href : '/');
     return false;
 };
 
@@ -557,17 +568,13 @@ const newsItems = computed(() => [
     },
 ]);
 
-const primeGames = ref([
-    {
-        id: "football-studio",
-        name: "FOOTBALL STUDIO",
-        provider: "Evolution",
-        image: "/games/football-studio.png",
-        href: "/jogo/football-studio",
-    },
-]);
+const managedGames = (tabKey: 'prime' | 'premium' | 'claude') => appConfig.value.games
+    .filter(game => game.tabKey === tabKey && game.status !== 'hidden')
+    .sort((a, b) => a.order - b.order)
+    .map(game => ({ ...game, id: game.gameId, name: game.title, provider: game.description, image: resolveAssetUrl(game.imageUrl), href: game.route }));
+const primeGames = computed(() => managedGames('prime'));
 
-const premiumGames = ref([
+const legacyPremiumGames = ref([
     {
         id: "bac-bo-en",
         name: "BAC BO EN",
@@ -604,17 +611,14 @@ const premiumGames = ref([
         image: "/games/aviator.png",
     },
 ]);
+const premiumGames = computed(() => managedGames('premium'));
 
-const claudeGames = computed(() => [
-    {
-        id: "football-studio",
-        name: "FOOTBALL STUDIO ENGLISH",
-        image: "/games/football-studio.png",
-        checkoutUrl:
-            appConfig.value.links.checkoutSemGale ||
-            CHECKOUT_URLS.legacySemGale,
-    },
-]);
+const claudeGames = computed(() => managedGames('claude').map(game => ({ ...game, checkoutUrl: appConfig.value.links.checkoutSemGale || CHECKOUT_URLS.legacySemGale })));
+
+const rankingBanners = computed(() => {
+    const now = Date.now();
+    return appConfig.value.banners.filter(banner => banner.placement === 'ranking' && banner.enabled && (!banner.startsAt || Date.parse(banner.startsAt) <= now) && (!banner.endsAt || Date.parse(banner.endsAt) >= now)).sort((a, b) => a.order - b.order);
+});
 
 const showGrupoModal = ref(false);
 const openGrupoModal = () => {
@@ -637,6 +641,23 @@ const handleLockedGameClick = (event: MouseEvent, gameId: string) => {
     const game = claudeGames.value.find((item) => item.id === gameId);
     const lockedCheckoutUrl = game?.checkoutUrl || checkoutUrl.value;
     window.open(lockedCheckoutUrl, "_blank", "noopener,noreferrer");
+};
+
+const handleManagedGameClick = (event: MouseEvent, game: ReturnType<typeof managedGames>[number] & { checkoutUrl?: string }) => {
+    if (game.status !== 'enabled') {
+        event.preventDefault();
+        window.alert(game.status === 'maintenance' ? 'Este jogo está temporariamente em manutenção.' : 'Este jogo está bloqueado no momento.');
+        return;
+    }
+    if (game.requiresLogin && !requireAuth(event)) return;
+    if (game.tabKey === 'prime') return;
+    event.preventDefault();
+    if (isSubscribed.value) {
+        navigateTo(game.route);
+        return;
+    }
+    const lockedCheckoutUrl = game.checkoutUrl || checkoutUrl.value;
+    window.open(lockedCheckoutUrl, '_blank', 'noopener,noreferrer');
 };
 
 const usefulLinks = computed(() => [
@@ -1595,4 +1616,9 @@ const highlights = ref([
     display: block;
     border-radius: 16px;
 }
+.ranking-section { margin: 32px 0; }
+.ranking-banners { display: grid; gap: 16px; }
+.ranking-banners a, .ranking-banners picture { display: block; width: 100%; }
+.ranking-banners img { display: block; width: 100%; height: auto; border-radius: 14px; object-fit: cover; }
+.is-managed-locked { cursor: not-allowed; }
 </style>

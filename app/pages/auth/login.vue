@@ -168,7 +168,10 @@ const handleLogin = async () => {
     );
 
     if (result.success) {
-        navigateTo("/");
+        const redirect = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/") && !route.query.redirect.startsWith("//")
+            ? route.query.redirect
+            : "/";
+        navigateTo(redirect);
     } else {
         errorMessage.value = result.message || "Erro ao fazer login";
     }

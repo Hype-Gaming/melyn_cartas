@@ -17,7 +17,13 @@
     </header>
 
     <!-- Main Content -->
-    <div class="main-content">
+    <div v-if="managedGame && managedGame.status !== 'enabled'" class="managed-game-unavailable">
+      <Icon :name="managedGame.status === 'maintenance' ? 'ph:wrench-bold' : 'ph:lock-key-bold'" />
+      <h2>{{ managedGame.status === 'maintenance' ? 'Jogo em manutenção' : 'Jogo bloqueado' }}</h2>
+      <p>{{ managedGame.status === 'maintenance' ? 'Este jogo está temporariamente indisponível.' : 'Este conteúdo não está disponível no momento.' }}</p>
+      <NuxtLink to="/">Voltar para o início</NuxtLink>
+    </div>
+    <div v-else class="main-content">
       <!-- Botão para abrir painel no mobile -->
       <button class="open-panel-btn" @click="sidebarOpen = true">
         <Icon name="ph:chart-bar-bold" />
@@ -46,6 +52,18 @@
 
           <!-- Possível Entrada -->
           <div v-if="gameMode === 'sinais'" class="possivel-entrada-section" :style="{ border: `2px solid ${valuePrimaryColor}`, boxShadow: `0 6px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px ${valuePrimaryColor}40` }">
+            <div v-if="!balanceReady" class="signal-gate signal-gate-loading" role="status">
+              <Icon name="ph:spinner-bold" class="spinner" />
+              <span>Consultando saldo...</span>
+            </div>
+            <div v-else-if="signalBlocked" class="signal-gate" role="status">
+              <Icon name="ph:lock-key-bold" class="signal-gate-icon" />
+              <strong>{{ effectiveBalanceGate.title }}</strong>
+              <p>{{ effectiveBalanceGate.message }}</p>
+              <small>Saldo atual: {{ formattedCurrentBalance }}</small>
+              <button type="button" @click="openBalanceGateCta">{{ effectiveBalanceGate.ctaLabel }}</button>
+            </div>
+            <template v-else>
             <div class="possivel-entrada-header" :style="{ background: headerGradient, borderBottom: `2px solid ${valueSecondaryColor}` }">
             </div>
             <div class="possivel-entrada-content">
@@ -60,6 +78,7 @@
                 </transition>
               </div>
             </div>
+            </template>
           </div>
 
           <!-- Filtros -->
@@ -448,7 +467,8 @@
 import { getCatalogadorQueries, getGameRouteConfig, resolveGameRouteId } from '../../constants/gameRoutes'
 
 const route = useRoute()
-const { isAuthenticated } = useAuth()
+const { isAuthenticated, balance, fetchUserProfile } = useAuth()
+const { openModal: openDepositModal } = useDeposit()
 const { config: appConfig } = useVisualConfig()
 const { startGame, fetchGameConfig, gameSignalConfig, isLoading: isLoadingGame, error: gameError, errorCode } = useGame()
 const showGameErrorModal = ref(false)
@@ -459,6 +479,16 @@ const routeGameConfig = computed(() => getGameRouteConfig(gameId.value))
 const resolvedGameId = computed(() => resolveGameRouteId(gameId.value))
 const isAviator = computed(() => gameId.value === 'aviator')
 const isFootballStudioGame = (gameKey: string) => gameKey === 'football-studio' || gameKey === 'football-studio-ao-vivo'
+const balanceReady = ref(false)
+const managedGame = computed(() => appConfig.value.games.find(game => game.gameId === gameId.value || game.route === route.path))
+const effectiveBalanceGate = computed(() => ({ ...appConfig.value.signalBalanceGate, ...(managedGame.value?.signalBalanceGate || {}) }))
+const signalBlocked = computed(() => effectiveBalanceGate.value.enabled && balance.value < effectiveBalanceGate.value.minimumBalance)
+const formattedCurrentBalance = computed(() => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance.value))
+const openBalanceGateCta = () => {
+  const target = effectiveBalanceGate.value.ctaUrl
+  if (target) window.open(target, '_blank', 'noopener,noreferrer')
+  else openDepositModal()
+}
 
 type CanonicalWinner = 'Player' | 'Banker' | 'Tie'
 
@@ -1425,6 +1455,11 @@ const loadGame = async () => {
   if (!isAuthenticated.value) {
     return
   }
+  if (managedGame.value && managedGame.value.status !== 'enabled') return
+
+  balanceReady.value = false
+  await fetchUserProfile()
+  balanceReady.value = true
 
   // 1. Busca config de sinais da API (signalUrl, signalName, signalCollection)
   await fetchGameConfig(gameId.value)
@@ -1484,6 +1519,15 @@ useHead({
   display: flex;
   flex-direction: column;
 }
+.signal-gate { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; background: rgba(4, 7, 14, .96); }
+.signal-gate-icon { font-size: 38px; color: var(--color-primary); }
+.signal-gate p, .signal-gate small { color: var(--text-muted); }
+.signal-gate button { margin-top: 6px; padding: 11px 18px; border: 0; border-radius: 9px; background: var(--color-primary); color: #080808; font-weight: 800; cursor: pointer; }
+.signal-gate-loading .spinner { font-size: 28px; }
+.managed-game-unavailable { min-height: calc(100vh - 72px); display: grid; place-content: center; justify-items: center; gap: 12px; padding: 24px; text-align: center; }
+.managed-game-unavailable > svg { font-size: 52px; color: var(--color-primary); }
+.managed-game-unavailable p { color: var(--text-muted); }
+.managed-game-unavailable a { padding: 11px 18px; border-radius: 9px; background: var(--color-primary); color: #080808; text-decoration: none; font-weight: 800; }
 
 /* Header */
 .header {
