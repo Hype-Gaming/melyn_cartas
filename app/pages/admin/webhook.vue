@@ -1,6 +1,4 @@
 <template>
-    <AdminPasswordGate v-if="needsLogin" @authed="loadRequests" />
-
     <div class="adm-page adm-scroll">
         <div class="adm-aurora"></div>
         <div class="adm-wrap">
@@ -82,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: "admin", layout: "bare" });
+definePageMeta({ middleware: "admin", layout: "admin" });
 
 const { config: appConfig } = useVisualConfig();
 
@@ -171,6 +169,8 @@ const rejectOne = async (email: string) => {
 onMounted(() => {
     if (!needsLogin.value) loadRequests();
 });
+// O portao de senha vive no layout; recarrega quando ele libera.
+watch(needsLogin, (trancado) => { if (!trancado) loadRequests(); });
 useHead({ title: "Liberar acesso - Admin" });
 </script>
 

@@ -18,8 +18,18 @@ import {
 export const useGameRoutes = () => {
   const { config } = useVisualConfig()
 
-  const findManaged = (gameId: string) =>
-    config.value.games.find(game => game.gameId === gameId) || null
+  /**
+  * Mesma regra de /jogo/[id].vue: casa pelo gameId do card ou pelo ultimo
+  * segmento da rota. O `route` e editavel no painel e pode divergir do gameId —
+  * casar so por gameId fazia o card perder todo o bloco tecnico.
+  */
+  const findManaged = (gameId: string) => {
+    const games = config.value.games
+    const byId = games.find(game => game.gameId === gameId)
+    if (byId) return byId
+    const byRoute = games.find(game => (game.route.match(/\/jogo\/([^/?#]+)/) || [])[1] === gameId)
+    return byRoute || null
+  }
 
   const emptyBase = (gameId: string): GameRouteDefinition => ({
     id: gameId,
@@ -34,11 +44,13 @@ export const useGameRoutes = () => {
       : emptyBase(gameId)
 
     const managed = findManaged(gameId)
-    if (!managed) return base
+    if (!managed) return { ...base, displayName: base.displayName || gameId }
 
     return {
       ...base,
-      displayName: managed.title || base.displayName,
+      // Sem fallback, telas como `Historico do ${displayName}` saiam com o nome vazio.
+      displayName: managed.title || base.displayName || gameId,
+      provider: managed.description || base.provider,
       startGameSlug: managed.startGameSlug || base.startGameSlug,
       catalogador: managed.catalogadorCollection && managed.catalogadorGame
         ? {
