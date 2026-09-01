@@ -256,6 +256,22 @@ export const useAuth = () => {
           // Buscar perfil completo do usuário (incluindo wallet/balance)
           await fetchUserProfile()
 
+          try {
+            await $fetch('/api/activity/login', {
+              method: 'POST',
+              body: {
+                email: authState.user?.email,
+                phone: authState.user?.phone,
+                name: authState.user?.name,
+                playerId: authState.user?.id,
+                brandSlug: authState.brandSlug,
+                balance: authState.balance
+              }
+            })
+          } catch {
+            // Analytics must never invalidate an authenticated session.
+          }
+
           return { success: true }
         } catch (err: any) {
           lastError = err

@@ -14,6 +14,6 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   if (!isAuthenticated.value) {
-    return navigateTo('/auth/login')
+    return navigateTo({ path: '/auth/login', query: { redirect: to.fullPath } })
   }
 })
