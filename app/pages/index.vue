@@ -2,41 +2,6 @@
     <div class="dashboard">
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Sidebar -->
-            <aside class="home-aside">
-                <button v-if="!isPaid" class="btn-confirmar-compra" @click="handleSubscriptionClick">
-                    <Icon name="ph:lock-open-bold" />
-                    {{ appConfig.content.subscribeButton }}
-                </button>
-
-                <h2 class="sidebar-title">{{ appConfig.content.newsTitle }}</h2>
-
-                <div class="news-card featured">
-                    <div class="news-badge">{{ appConfig.content.newsBadge }}</div>
-                    <h3 class="news-title-big">{{ appConfig.content.newsHeadline }}</h3>
-                </div>
-
-                <NuxtLink
-                    :to="news.external ? news.href : news.href || '#'"
-                    :href="news.external ? news.href : undefined"
-                    :target="news.external ? '_blank' : undefined"
-                    :rel="news.external ? 'noopener noreferrer' : undefined"
-                    :external="news.external"
-                    class="news-item"
-                    v-for="(news, index) in newsItems"
-                    :key="index"
-                    @click="handleNewsClick($event, news)"
-                >
-                    <div class="news-icon">
-                        <Icon :name="news.icon" class="news-icon-svg" />
-                    </div>
-                    <div class="news-content">
-                        <h4 class="news-title">{{ news.title }}</h4>
-                        <p class="news-description">{{ news.description }}</p>
-                    </div>
-                </NuxtLink>
-            </aside>
-
             <!-- Center Content -->
             <div class="center-content">
                 <!-- Banner Carousel -->

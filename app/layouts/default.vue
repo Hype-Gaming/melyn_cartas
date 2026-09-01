@@ -8,6 +8,6 @@
 
 <style scoped>
 .app-shell { min-height: 100vh; background: var(--bg-dark); }
-.app-shell-main { min-width: 0; min-height: 100vh; margin-left: 288px; }
+.app-shell-main { min-width: 0; min-height: 100vh; margin-left: 300px; }
 @media (max-width: 900px) { .app-shell-main { margin-left: 0; } }
 </style>

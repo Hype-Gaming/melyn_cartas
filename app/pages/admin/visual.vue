@@ -300,7 +300,8 @@ const linkFields: Array<{ key: LinkKey; label: string }> = [
   { key: 'register', label: 'Cadastro' }, { key: 'checkout', label: 'Checkout' },
   { key: 'checkoutSemGale', label: 'Checkout Sem Gale' },
   { key: 'whatsappSupport', label: 'WhatsApp suporte' }, { key: 'whatsappCommunity', label: 'WhatsApp comunidade' },
-  { key: 'telegram', label: 'Telegram' }, { key: 'instagram', label: 'Instagram' }, { key: 'site', label: 'Site' }
+  { key: 'telegram', label: 'Telegram canal' }, { key: 'telegramSupport', label: 'Telegram suporte' },
+  { key: 'instagram', label: 'Instagram' }, { key: 'site', label: 'Site' }
 ]
 
 const featureFields: Array<{ key: FeatureKey; label: string }> = [

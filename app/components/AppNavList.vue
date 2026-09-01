@@ -13,7 +13,7 @@ const route = useRoute()
 
 const routes: Record<string, string> = {
   home: '/', games: '/#jogos', lessons: '/aulas', management: '/gestao',
-  ranking: '/ranking', profile: '/perfil', live: '/', links: '/'
+  ranking: '/ranking', profile: '/perfil', live: '/', links: '/links'
 }
 
 const items = computed(() => config.value.menu
@@ -31,11 +31,12 @@ const isActive = (key: string) => {
 </script>
 
 <style scoped>
-.app-nav { display: grid; gap: 6px; }
+.app-nav { display: grid; gap: 9px; }
 .app-nav-item { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 14px; border: 1px solid transparent; border-radius: 11px; color: var(--text-muted); text-decoration: none; font-weight: 650; transition: transform .24s cubic-bezier(.16, 1, .3, 1); }
-.app-nav-item:hover { transform: translateX(3px); color: var(--text-main); background: var(--component-bg); }
-.app-nav-item.active { color: var(--text-main); border-color: var(--card-border); background: var(--component-bg); }
-.app-nav-item :deep(svg) { flex: 0 0 auto; font-size: 21px; color: var(--color-primary); }
+.app-nav-item:hover { transform: translateX(3px); color: var(--text-main); background: color-mix(in srgb, var(--text-main) 5%, transparent); }
+.app-nav-item.active { color: var(--text-main); background: color-mix(in srgb, var(--color-primary) 10%, transparent); border-left: 2px solid var(--color-primary); border-radius: 4px 11px 11px 4px; }
+.app-nav-item :deep(svg) { flex: 0 0 auto; font-size: 21px; color: currentColor; }
+.app-nav-item.active :deep(svg) { color: var(--color-primary); }
 .app-nav-item:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .app-nav-item { transition: none; } .app-nav-item:hover { transform: none; } }
 </style>
