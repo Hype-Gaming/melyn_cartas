@@ -171,6 +171,15 @@
                   <label class="field"><span>Sinal — coleção</span><input v-model="game.signalCollection" placeholder="bac_bo_english" /></label>
                   <label class="field"><span>Sinal — nome</span><input v-model="game.signalName" placeholder="bac-bo-ao-vivo-hypeg1" /></label>
                 </div>
+                <p class="tech-hint">Rótulos dos resultados, como a mesa do provedor os chama. A letra aparece na grade de histórico.</p>
+                <div class="form-grid">
+                  <label class="field"><span>Resultado 1 — rótulo</span><input v-model="game.outcomePlayerLabel" placeholder="Casa" /></label>
+                  <label class="field"><span>Resultado 1 — letra</span><input v-model="game.outcomePlayerLetter" maxlength="3" placeholder="C" /></label>
+                  <label class="field"><span>Resultado 2 — rótulo</span><input v-model="game.outcomeBankerLabel" placeholder="Fora" /></label>
+                  <label class="field"><span>Resultado 2 — letra</span><input v-model="game.outcomeBankerLetter" maxlength="3" placeholder="F" /></label>
+                  <label class="field"><span>Empate — rótulo</span><input v-model="game.outcomeTieLabel" placeholder="Empate" /></label>
+                  <label class="field"><span>Empate — letra</span><input v-model="game.outcomeTieLetter" maxlength="3" placeholder="E" /></label>
+                </div>
               </details>
               <button type="button" class="icon-btn" title="Remover" @click="draft.games.splice(index, 1)"><Icon name="ph:trash-bold" /></button>
             </div>
@@ -423,7 +432,7 @@ const cleanupMedia = async () => {
 }
 
 const addMenuItem = () => draft.menu.push({ key: '', label: '', icon: '', order: draft.menu.length + 1 })
-const addGame = () => draft.games.push({ gameId: '', title: '', description: null, imageUrl: null, route: '', tabKey: 'prime', order: draft.games.length + 1, status: 'enabled', requiresLogin: true, startGameSlug: '', catalogadorCollection: '', catalogadorGame: '', catalogadorFallbackGames: [], signalUrl: '', signalCollection: '', signalName: '', signalBalanceGate: {} })
+const addGame = () => draft.games.push({ gameId: '', title: '', description: null, imageUrl: null, route: '', tabKey: 'prime', order: draft.games.length + 1, status: 'enabled', requiresLogin: true, startGameSlug: '', catalogadorCollection: '', catalogadorGame: '', catalogadorFallbackGames: [], signalUrl: '', signalCollection: '', signalName: '', outcomePlayerLabel: '', outcomePlayerLetter: '', outcomeBankerLabel: '', outcomeBankerLetter: '', outcomeTieLabel: '', outcomeTieLetter: '', signalBalanceGate: {} })
 
 // A lista de alternativas e digitada separada por virgula, mas persiste como array.
 const setFallbackGames = (game: any, value: string) => {
