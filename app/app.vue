@@ -17,6 +17,7 @@
         <UpdateNotification />
         <KycModal :show="showKycModal" @dismiss="kycDismissed = true" />
         <BlockedOverlay v-if="isBlocked" />
+        <NotificationPrompt :allowed="!showKycModal && !isBlocked" />
     </div>
 </template>
 
