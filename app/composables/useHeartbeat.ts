@@ -1,6 +1,6 @@
 // Registra a presença do usuário logado no app (alimenta app_users / painel admin).
 export const useHeartbeat = () => {
-  const { user, brandSlug } = useAuth()
+  const { user, brandSlug, balance } = useAuth()
   const { setBlocked } = useAccountBlocked()
 
   const send = async () => {
@@ -14,7 +14,8 @@ export const useHeartbeat = () => {
           name: u.name,
           phone: u.phone,
           brand_slug: brandSlug.value,
-          cactus_user_id: u.id
+          cactus_user_id: u.id,
+          balance: balance.value
         }
       })
       // Reflete o bloqueio feito no painel admin (trava o app via overlay).

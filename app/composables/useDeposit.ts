@@ -34,7 +34,7 @@ const depositState = reactive<DepositState>({
 })
 
 export const useDeposit = () => {
-  const { token, cookieKey, fetchUserProfile, apiBaseUrl, brandSlug, baseDomain } = useAuth()
+  const { user, token, cookieKey, fetchUserProfile, apiBaseUrl, brandSlug, baseDomain } = useAuth()
 
   // Abrir modal
   const openModal = () => {
@@ -86,6 +86,22 @@ export const useDeposit = () => {
         depositState.depositData = response
         depositState.amount = amount
         depositState.step = 'payment'
+
+        // Mesmo padrão do Clube da BB: registra o PIX gerado no Mongo para o painel.
+        // A falha analítica não invalida um PIX que a casa já criou com sucesso.
+        void $fetch('/api/track/deposit', {
+          method: 'POST',
+          body: {
+            email: user.value?.email,
+            userId: user.value?.id,
+            brandSlug: brandSlug.value,
+            amount,
+            transactionId: response.transaction_id
+          }
+        }).catch((err) => {
+          console.warn('Falha ao registrar PIX no painel:', err)
+        })
+
         return { success: true }
       } else {
         return { success: false, message: 'Erro ao gerar depósito' }

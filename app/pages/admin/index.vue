@@ -118,6 +118,17 @@
                         <option value="active">Ativos</option>
                         <option value="blocked">Bloqueados</option>
                     </select>
+                    <select v-model="firstAccessFilter" class="adm-select">
+                        <option value="">Primeiro acesso: todos</option>
+                        <option value="24h">Últimas 24 horas</option>
+                        <option value="7d">Últimos 7 dias</option>
+                        <option value="30d">Últimos 30 dias</option>
+                        <option value="custom">Período personalizado</option>
+                    </select>
+                    <template v-if="firstAccessFilter === 'custom'">
+                        <input v-model="dateFrom" class="adm-select" type="date" aria-label="Data inicial" />
+                        <input v-model="dateTo" class="adm-select" type="date" aria-label="Data final" />
+                    </template>
                     <select v-if="brands.length" v-model="brandFilter" class="adm-select">
                         <option value="">Marca: todas</option>
                         <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
@@ -137,16 +148,19 @@
                                 <th>Marca</th>
                                 <th>1º acesso</th>
                                 <th>Último acesso</th>
+                                <th>ID jogador</th>
+                                <th>Acessos</th>
+                                <th>Saldo</th>
                                 <th>Status</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="loadingUsers && !users.length">
-                                <td colspan="11" class="adm-td-empty">Carregando...</td>
+                                <td colspan="14" class="adm-td-empty">Carregando...</td>
                             </tr>
                             <tr v-else-if="!users.length">
-                                <td colspan="11" class="adm-td-empty">Nenhum usuário encontrado.</td>
+                                <td colspan="14" class="adm-td-empty">Nenhum usuário encontrado.</td>
                             </tr>
                             <tr v-for="u in users" :key="u.email">
                                 <td>
@@ -228,6 +242,9 @@
                                 <td>{{ u.brand_slug || "—" }}</td>
                                 <td class="adm-date">{{ fmtDate(u.first_seen_at) }}</td>
                                 <td class="adm-date">{{ fmtDate(u.last_seen_at) }}</td>
+                                <td>{{ u.cactus_user_id ?? "—" }}</td>
+                                <td>{{ u.access_count || 1 }}</td>
+                                <td>{{ u.last_known_balance == null ? "—" : fmtMoney(u.last_known_balance) }}</td>
                                 <td>
                                     <span class="adm-pill" :class="u.blocked ? 'pill-blocked' : 'pill-active'">
                                         {{ u.blocked ? "Bloqueado" : "Ativo" }}
@@ -263,15 +280,16 @@
                 <div class="adm-table-wrap adm-scroll">
                     <table class="adm-table">
                         <thead>
-                            <tr><th>E-mail</th><th>Valor</th><th>Marca</th><th>FTD</th><th>Status</th><th>Data</th></tr>
+                            <tr><th>E-mail</th><th>Valor</th><th>Transação</th><th>Marca</th><th>FTD</th><th>Status</th><th>Data</th></tr>
                         </thead>
                         <tbody>
                             <tr v-if="!deposits.length">
-                                <td colspan="6" class="adm-td-empty">Nenhum depósito registrado.</td>
+                                <td colspan="7" class="adm-td-empty">Nenhum depósito registrado.</td>
                             </tr>
                             <tr v-for="(d, i) in deposits" :key="i">
                                 <td>{{ d.email }}</td>
                                 <td>{{ fmtMoney(d.amount) }}</td>
+                                <td>{{ d.transaction_id || "—" }}</td>
                                 <td>{{ d.brand_slug || "—" }}</td>
                                 <td>{{ d.is_ftd ? "Sim" : "—" }}</td>
                                 <td>{{ d.status || "—" }}</td>
@@ -345,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: "admin" });
+definePageMeta({ middleware: "admin", layout: "bare" });
 
 const { config: appConfig } = useVisualConfig();
 
@@ -364,6 +382,9 @@ interface AppUser {
     auto_risk_tag: "risk_24h" | "risk_48h" | "risk_no_access" | null;
     tag_override: "auto" | "none" | "risk_24h" | "risk_48h" | "risk_no_access";
     contact_status: "pendente" | "contatado" | "respondeu" | "convertido" | "ignorado";
+    cactus_user_id?: string | number | null;
+    access_count?: number;
+    last_known_balance?: number | null;
 }
 
 const { adminFetch, adminEmail, needsLogin, logout } = useAdmin();
@@ -392,6 +413,9 @@ const riskFilter = ref("");
 const subFilter = ref("");
 const statusFilter = ref("");
 const brandFilter = ref("");
+const firstAccessFilter = ref("");
+const dateFrom = ref("");
+const dateTo = ref("");
 const PAGE = 50;
 
 const riskChips = [
@@ -402,7 +426,7 @@ const riskChips = [
 ];
 
 // --- Depósitos ---
-const deposits = ref<Array<{ email: string; amount: number; brand_slug: string | null; is_ftd: boolean; status: string | null; created_at: string | null }>>([]);
+const deposits = ref<Array<{ email: string; amount: number; transaction_id: string | null; brand_slug: string | null; is_ftd: boolean; status: string | null; created_at: string | null }>>([]);
 
 // --- Atividade ---
 const activityDays = ref<Array<{ date: string; users: number; deposits: number }>>([]);
@@ -498,6 +522,9 @@ const fetchUsers = async (append = false) => {
                 subscription: subFilter.value,
                 status: statusFilter.value,
                 brand: brandFilter.value,
+                firstAccess: firstAccessFilter.value,
+                dateFrom: dateFrom.value,
+                dateTo: dateTo.value,
                 skip,
                 limit: PAGE,
             },
@@ -564,7 +591,7 @@ watch(search, () => {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => fetchUsers(), 300);
 });
-watch([riskFilter, subFilter, statusFilter, brandFilter], () => fetchUsers());
+watch([riskFilter, subFilter, statusFilter, brandFilter, firstAccessFilter, dateFrom, dateTo], () => fetchUsers());
 
 const setRisk = (v: string) => { riskFilter.value = v; };
 const toggleRiskCard = () => {

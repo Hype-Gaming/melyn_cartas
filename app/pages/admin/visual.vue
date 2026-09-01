@@ -9,9 +9,12 @@
           <h1><Icon name="ph:palette-bold" /> Visual do app</h1>
           <p>As alterações salvas entram no app após atualizar a página.</p>
         </div>
+        <button class="ghost-btn" :disabled="savingDraft || loading" @click="saveDraft">
+          <Icon name="ph:file-dashed-bold" /> {{ savingDraft ? 'Salvando...' : 'Salvar rascunho' }}
+        </button>
         <button class="primary-btn" :disabled="saving || loading" @click="saveConfig">
           <Icon :name="saving ? 'ph:spinner-gap-bold' : 'ph:floppy-disk-bold'" />
-          {{ saving ? 'Salvando...' : 'Salvar alterações' }}
+          {{ saving ? 'Publicando...' : 'Publicar alterações' }}
         </button>
       </header>
 
@@ -78,7 +81,7 @@
           <div class="panel-head">
             <div>
               <h2>Mídia</h2>
-              <p class="hint">PNG, JPEG, WEBP, GIF, SVG ou ICO, com até 5 MB.</p>
+              <p class="hint">PNG, JPEG, WEBP, GIF ou ICO, com até 5 MB.</p>
             </div>
             <button type="button" class="ghost-btn" :disabled="cleaning" @click="cleanupMedia">
               <Icon :name="cleaning ? 'ph:spinner-gap-bold' : 'ph:broom-bold'" />
@@ -120,6 +123,64 @@
           </div>
         </section>
 
+        <section v-show="abaAtiva === 'operacao'" class="panel">
+          <h2>Notificações e trava de saldo</h2>
+          <div class="toggle-grid">
+            <label class="toggle"><input v-model="draft.notificationPrompt.enabled" type="checkbox" /><span>Exibir convite de notificações</span></label>
+            <label class="toggle"><input v-model="draft.signalBalanceGate.enabled" type="checkbox" /><span>Ativar trava global de saldo</span></label>
+          </div>
+          <div class="form-grid">
+            <label class="field"><span>Título das notificações</span><input v-model="draft.notificationPrompt.title" /></label>
+            <label class="field"><span>Mensagem das notificações</span><input v-model="draft.notificationPrompt.message" /></label>
+            <label class="field"><span>Botão ativar</span><input v-model="draft.notificationPrompt.activateLabel" /></label>
+            <label class="field"><span>Botão adiar</span><input v-model="draft.notificationPrompt.laterLabel" /></label>
+            <label class="field"><span>Nova tentativa (dias)</span><input v-model.number="draft.notificationPrompt.retryDays" type="number" min="1" /></label>
+            <label class="field"><span>Saldo mínimo (R$)</span><input v-model.number="draft.signalBalanceGate.minimumBalance" type="number" min="0" step="0.01" /></label>
+            <label class="field"><span>Título do bloqueio</span><input v-model="draft.signalBalanceGate.title" /></label>
+            <label class="field"><span>Mensagem do bloqueio</span><input v-model="draft.signalBalanceGate.message" /></label>
+            <label class="field"><span>Texto do CTA</span><input v-model="draft.signalBalanceGate.ctaLabel" /></label>
+            <label class="field"><span>Destino do CTA (vazio abre depósito)</span><input v-model="draft.signalBalanceGate.ctaUrl" type="url" /></label>
+          </div>
+
+          <div class="panel-head"><h2>Jogos</h2><button type="button" class="ghost-btn" @click="addGame"><Icon name="ph:plus-bold" /> Adicionar</button></div>
+          <div class="managed-list">
+            <div v-for="(game, index) in draft.games" :key="game.gameId || index" class="managed-card">
+              <div class="form-grid">
+                <label class="field"><span>ID</span><input v-model="game.gameId" /></label>
+                <label class="field"><span>Título</span><input v-model="game.title" /></label>
+                <label class="field"><span>Descrição</span><input v-model="game.description" /></label>
+                <label class="field"><span>Rota</span><input v-model="game.route" /></label>
+                <label class="field"><span>Aba</span><select v-model="game.tabKey"><option value="prime">Prime</option><option value="premium">Premium</option><option value="claude">Sem Gale</option></select></label>
+                <label class="field"><span>Estado</span><select v-model="game.status"><option value="enabled">Liberado</option><option value="blocked">Bloqueado</option><option value="hidden">Oculto</option><option value="maintenance">Em manutenção</option></select></label>
+                <label class="field"><span>Ordem</span><input v-model.number="game.order" type="number" min="0" /></label>
+                <label class="toggle"><input v-model="game.requiresLogin" type="checkbox" /><span>Exige login</span></label>
+                <label class="toggle"><input v-model="game.signalBalanceGate.enabled" type="checkbox" /><span>Trava de saldo neste jogo</span></label>
+                <label class="field"><span>Saldo mínimo do jogo</span><input v-model.number="game.signalBalanceGate.minimumBalance" type="number" min="0" step="0.01" /></label>
+              </div>
+              <AdminMediaField v-model="game.imageUrl" label="Imagem do card" />
+              <button type="button" class="icon-btn" title="Remover" @click="draft.games.splice(index, 1)"><Icon name="ph:trash-bold" /></button>
+            </div>
+          </div>
+
+          <div class="panel-head"><h2>Banners de Ranking</h2><button type="button" class="ghost-btn" @click="addRankingBanner"><Icon name="ph:plus-bold" /> Adicionar</button></div>
+          <div class="managed-list">
+            <div v-for="banner in rankingBanners" :key="banner.id" class="managed-card">
+              <div class="form-grid">
+                <label class="field"><span>Texto alternativo</span><input v-model="banner.altText" /></label>
+                <label class="field"><span>Link</span><input v-model="banner.targetUrl" type="url" /></label>
+                <label class="field"><span>Início</span><input v-model="banner.startsAt" type="datetime-local" /></label>
+                <label class="field"><span>Fim</span><input v-model="banner.endsAt" type="datetime-local" /></label>
+                <label class="field"><span>Ordem</span><input v-model.number="banner.order" type="number" min="0" /></label>
+                <label class="toggle"><input v-model="banner.enabled" type="checkbox" /><span>Ativo</span></label>
+                <label class="toggle"><input v-model="banner.openInNewTab" type="checkbox" /><span>Abrir em nova aba</span></label>
+              </div>
+              <div class="media-grid"><AdminMediaField v-model="banner.desktopImageUrl" label="Desktop" /><AdminMediaField v-model="banner.mobileImageUrl" label="Mobile" /></div>
+              <a v-if="safePreviewUrl(banner.targetUrl)" :href="safePreviewUrl(banner.targetUrl)!" target="_blank" rel="noopener noreferrer" class="ghost-btn">Testar link</a>
+              <button type="button" class="icon-btn" title="Remover" @click="removeBanner(banner.id)"><Icon name="ph:trash-bold" /></button>
+            </div>
+          </div>
+        </section>
+
         <section v-show="abaAtiva === 'menu'" class="panel">
           <div class="panel-head">
             <h2>Menu</h2>
@@ -143,11 +204,18 @@
             <label class="field"><span>Título</span><input v-model="draft.maintenance.title" /></label>
             <label class="field"><span>Mensagem</span><input v-model="draft.maintenance.message" /></label>
           </div>
+          <div v-if="versions.length" class="managed-list">
+            <h3>Versões publicadas</h3>
+            <div v-for="version in versions" :key="version._id" class="managed-card">
+              <span>{{ new Date(version.publishedAt).toLocaleString('pt-BR') }} · {{ version.publishedBy }}</span>
+              <button type="button" class="ghost-btn" @click="rollback(version._id)">Restaurar</button>
+            </div>
+          </div>
         </section>
 
         <div class="bottom-actions">
           <button class="primary-btn" :disabled="saving" @click="saveConfig">
-            <Icon name="ph:floppy-disk-bold" /> {{ saving ? 'Salvando...' : 'Salvar alterações' }}
+            <Icon name="ph:floppy-disk-bold" /> {{ saving ? 'Publicando...' : 'Publicar alterações' }}
           </button>
         </div>
       </template>
@@ -161,13 +229,13 @@
 import type { AppConfig, ThemeKey } from '../../../shared/appConfig'
 import { cloneDefaultAppConfig } from '../../../shared/appConfig'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'bare' })
 
 type BrandKey = keyof AppConfig['brand']
 type ContentKey = keyof AppConfig['content']
 type LinkKey = keyof AppConfig['links']
 type FeatureKey = keyof AppConfig['features']
-type TabId = 'marca' | 'cores' | 'textos' | 'links' | 'midia' | 'recursos' | 'menu' | 'manutencao'
+type TabId = 'marca' | 'cores' | 'textos' | 'links' | 'midia' | 'recursos' | 'operacao' | 'menu' | 'manutencao'
 
 const tabs: Array<{ id: TabId; label: string; icon: string }> = [
   { id: 'marca', label: 'Marca', icon: 'ph:identification-card-bold' },
@@ -176,6 +244,7 @@ const tabs: Array<{ id: TabId; label: string; icon: string }> = [
   { id: 'links', label: 'Links', icon: 'ph:link-bold' },
   { id: 'midia', label: 'Mídia', icon: 'ph:image-square-bold' },
   { id: 'recursos', label: 'Recursos', icon: 'ph:toggles-bold' },
+  { id: 'operacao', label: 'Operação', icon: 'ph:sliders-horizontal-bold' },
   { id: 'menu', label: 'Menu', icon: 'ph:list-bold' },
   { id: 'manutencao', label: 'Manutenção', icon: 'ph:wrench-bold' }
 ]
@@ -187,9 +256,11 @@ const { loadAppConfig, applyTheme } = useVisualConfig()
 const draft = reactive<AppConfig>(cloneDefaultAppConfig())
 const loading = ref(true)
 const saving = ref(false)
+const savingDraft = ref(false)
 const cleaning = ref(false)
 const toast = ref('')
 const toastType = ref<'ok' | 'error'>('ok')
+const versions = ref<Array<{ _id: string; publishedAt: string; publishedBy: string }>>([])
 
 const validTab = (value: unknown): value is TabId => tabs.some(tab => tab.id === value)
 const abaAtiva = computed<TabId>(() => validTab(route.query.tab) ? route.query.tab : 'marca')
@@ -234,7 +305,7 @@ const linkFields: Array<{ key: LinkKey; label: string }> = [
 
 const featureFields: Array<{ key: FeatureKey; label: string }> = [
   { key: 'home', label: 'Início' }, { key: 'games', label: 'Jogos' },
-  { key: 'lessons', label: 'Aulas' }, { key: 'ranking', label: 'Ranking' },
+  { key: 'lessons', label: 'Aulas' }, { key: 'ranking', label: 'Ranking' }, { key: 'profile', label: 'Perfil' },
   { key: 'links', label: 'Links úteis' }, { key: 'highlights', label: 'Destaques' },
   { key: 'management', label: 'Gestão' }, { key: 'live', label: 'Live' }
 ]
@@ -254,6 +325,12 @@ const loadConfig = async () => {
   try {
     const result = await $fetch<{ success: boolean; data: AppConfig }>('/api/app-config')
     applyDraft(result.data)
+    const [savedDraft, savedVersions] = await Promise.all([
+      adminFetch<{ data: AppConfig | null }>('/api/admin/settings/draft'),
+      adminFetch<{ versions: typeof versions.value }>('/api/admin/settings/versions')
+    ])
+    if (savedDraft.data) applyDraft(savedDraft.data)
+    versions.value = savedVersions.versions
   } catch {
     notify('Não foi possível carregar a configuração.', 'error')
   } finally {
@@ -278,6 +355,27 @@ const saveConfig = async () => {
   }
 }
 
+const saveDraft = async () => {
+  savingDraft.value = true
+  try {
+    const result = await adminFetch<{ success: boolean; data: AppConfig }>('/api/admin/settings/draft', { method: 'POST', body: JSON.parse(JSON.stringify(draft)) })
+    applyDraft(result.data)
+    notify('Rascunho salvo. O app público não foi alterado.')
+  } catch (error: any) {
+    notify(error?.data?.message || 'Erro ao salvar rascunho.', 'error')
+  } finally { savingDraft.value = false }
+}
+
+const rollback = async (versionId: string) => {
+  if (!window.confirm('Restaurar esta versão publicada?')) return
+  try {
+    const result = await adminFetch<{ success: boolean; data: AppConfig }>('/api/admin/settings/rollback', { method: 'POST', body: { versionId } })
+    applyDraft(result.data)
+    await loadAppConfig(true)
+    notify('Versão restaurada e publicada.')
+  } catch (error: any) { notify(error?.data?.message || 'Erro ao restaurar versão.', 'error') }
+}
+
 const cleanupMedia = async () => {
   cleaning.value = true
   try {
@@ -294,6 +392,14 @@ const cleanupMedia = async () => {
 }
 
 const addMenuItem = () => draft.menu.push({ key: '', label: '', icon: '', order: draft.menu.length + 1 })
+const addGame = () => draft.games.push({ gameId: '', title: '', description: null, imageUrl: null, route: '', tabKey: 'prime', order: draft.games.length + 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} })
+const rankingBanners = computed(() => draft.banners.filter(banner => banner.placement === 'ranking'))
+const addRankingBanner = () => draft.banners.push({ id: `ranking-${Date.now()}`, placement: 'ranking', desktopImageUrl: '', mobileImageUrl: null, altText: '', targetUrl: null, openInNewTab: false, enabled: false, order: rankingBanners.value.length + 1, startsAt: null, endsAt: null })
+const removeBanner = (id: string) => { const index = draft.banners.findIndex(banner => banner.id === id); if (index >= 0) draft.banners.splice(index, 1) }
+const safePreviewUrl = (value: string | null) => {
+  if (!value) return null
+  try { const parsed = new URL(value, window.location.origin); return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : null } catch { return null }
+}
 
 watch(needsLogin, value => { if (!value) loadConfig() })
 onMounted(() => { if (!needsLogin.value) loadConfig() })
@@ -332,6 +438,10 @@ input:focus, textarea:focus { border-color: #8b7cf6; box-shadow: 0 0 0 3px rgba(
 .banner-item { position: relative; }
 .banner-item > .icon-btn { position: absolute; top: 26px; right: 8px; width: 30px; height: 30px; }
 .empty-banners { padding: 22px; border: 1px dashed #303544; border-radius: 10px; color: #6f7488; text-align: center; }
+.managed-list { display: grid; gap: 16px; }
+.managed-card { position: relative; padding: 18px; border: 1px solid #303544; border-radius: 12px; background: #10131d; }
+.managed-card > .icon-btn { position: absolute; top: 10px; right: 10px; }
+.managed-card select { min-height: 42px; border: 1px solid #303544; border-radius: 8px; background: #0c0f18; color: #fff; padding: 0 10px; }
 .toggle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .toggle { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #2d3140; border-radius: 10px; background: #0c0e14; }
 .toggle input { width: 18px; height: 18px; accent-color: #8b7cf6; }

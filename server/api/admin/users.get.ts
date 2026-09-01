@@ -13,13 +13,24 @@ export default defineEventHandler(async (event) => {
   const subscription = String(q.subscription || '')
   const status = String(q.status || '')
   const brand = String(q.brand || '').trim()
+  const firstAccess = String(q.firstAccess || '')
+  const dateFrom = String(q.dateFrom || '')
+  const dateTo = String(q.dateTo || '')
   const rx = search ? new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null
 
   const match: Record<string, any> = {}
-  if (rx) match.$or = [{ email: rx }, { name: rx }, { phone: rx }]
+  if (rx) match.$or = [{ email: rx }, { name: rx }, { phone: rx }, { cactus_user_id: /^\d+$/.test(search) ? { $in: [Number(search), search] } : rx }]
   if (status === 'active') match.blocked = { $ne: true }
   if (status === 'blocked') match.blocked = true
   if (brand) match.brand_slug = brand
+  const now = new Date()
+  const firstSeen: Record<string, Date> = {}
+  if (firstAccess === '24h') firstSeen.$gte = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+  if (firstAccess === '7d') firstSeen.$gte = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  if (firstAccess === '30d') firstSeen.$gte = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  if (firstAccess === 'custom' && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) firstSeen.$gte = new Date(`${dateFrom}T00:00:00-03:00`)
+  if (firstAccess === 'custom' && /^\d{4}-\d{2}-\d{2}$/.test(dateTo)) firstSeen.$lte = new Date(`${dateTo}T23:59:59.999-03:00`)
+  if (Object.keys(firstSeen).length) match.first_seen_at = firstSeen
 
   // assinantes-only só fazem sentido quando não filtra por bloqueados nem por marca
   const includeSubsOnly = status !== 'blocked' && !brand

@@ -1,67 +1,9 @@
 <template>
     <div class="dashboard">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <NuxtLink to="/">
-                    <AppLogo class="header-logo" />
-                </NuxtLink>
-            </div>
-            <div class="header-right">
-                <div class="balance">
-                    <Icon name="ph:wallet-bold" class="balance-icon" />
-                    <span class="balance-value">{{ formattedBalance }}</span>
-                    <Icon
-                        name="ph:info"
-                        class="balance-info"
-                        @click="handleDepositClick"
-                    />
-                </div>
-                <button class="btn-deposit" @click="handleDepositClick">
-                    {{ appConfig.content.depositButton }}
-                </button>
-                <div class="profile-wrapper">
-                    <div class="profile-icon" @click="toggleProfileDropdown">
-                        <Icon name="ph:user-bold" />
-                    </div>
-                    <div class="profile-dropdown" v-if="showProfileDropdown">
-                        <div class="dropdown-user" v-if="user">
-                            <span class="user-name">{{
-                                user?.name || "Usuário"
-                            }}</span>
-                            <span class="user-email">{{
-                                user?.email || ""
-                            }}</span>
-                        </div>
-                        <NuxtLink to="/gestao" class="dropdown-item" @click="guardRoute">
-                            <Icon name="ph:calculator-bold" />
-                            Gestão
-                        </NuxtLink>
-                        <NuxtLink to="/aulas" class="dropdown-item" @click="guardRoute">
-                            <Icon name="ph:graduation-cap-bold" />
-                            Aulas
-                        </NuxtLink>
-                        <button
-                            v-if="isAuthenticated"
-                            @click="handleLogout"
-                            class="dropdown-item logout"
-                        >
-                            <Icon name="ph:sign-out-bold" />
-                            <span>Sair</span>
-                        </button>
-                        <button v-else class="dropdown-item" @click="redirectToLogin">
-                            <Icon name="ph:sign-in-bold" />
-                            <span>Entrar</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
         <!-- Main Content -->
         <div class="main-content">
             <!-- Sidebar -->
-            <aside class="sidebar">
+            <aside class="home-aside">
                 <button v-if="!isPaid" class="btn-confirmar-compra" @click="handleSubscriptionClick">
                     <Icon name="ph:lock-open-bold" />
                     {{ appConfig.content.subscribeButton }}
@@ -134,7 +76,7 @@
                 </div>
 
                 <!-- IA Prime -->
-                <div class="games-section">
+                <div id="jogos" class="games-section">
                     <div class="games-header">
                         <h2 class="games-title">
                             <Icon
@@ -150,7 +92,8 @@
                             :key="index"
                             :href="game.href"
                             class="game-card"
-                            @click="guardRoute"
+                            :class="{ 'is-managed-locked': game.status !== 'enabled' }"
+                            @click="handleManagedGameClick($event, game)"
                         >
                             <div class="game-image">
                                 <img
@@ -191,12 +134,12 @@
                         <a
                             v-for="(game, index) in premiumGames"
                             :key="index"
-                            :href="isSubscribed ? `/jogo/${game.id}` : checkoutUrl"
+                            :href="isSubscribed ? game.href : checkoutUrl"
                             :target="isSubscribed ? '_self' : '_blank'"
                             rel="noopener noreferrer"
                             class="game-card card-premium-locked"
                             :class="{ 'is-locked': !isPaid }"
-                            @click="handleLockedGameClick($event, game.id)"
+                            @click="handleManagedGameClick($event, game)"
                         >
                             <div class="game-image">
                                 <img
@@ -238,12 +181,12 @@
                         <a
                             v-for="(game, index) in claudeGames"
                             :key="index"
-                            :href="isSubscribed ? `/jogo/${game.id}` : game.checkoutUrl"
+                            :href="isSubscribed ? game.href : game.checkoutUrl"
                             :target="isSubscribed ? '_self' : '_blank'"
                             rel="noopener noreferrer"
                             class="game-card card-claude-locked"
                             :class="{ 'is-locked': !isPaid }"
-                            @click="handleLockedGameClick($event, game.id)"
+                            @click="handleManagedGameClick($event, game)"
                         >
                             <div class="game-image">
                                 <img
@@ -325,7 +268,7 @@
         </div>
 
         <!-- Deposit Modal -->
-        <DepositModal />
+        <!-- DepositModal lives in the default layout so every page can open it. -->
 
         <!-- Subscription Modal -->
         <!-- Pop-up de desbloqueio de assinatura desativado a pedido (será removido).
@@ -433,15 +376,16 @@ const toggleProfileDropdown = () => {
     showProfileDropdown.value = !showProfileDropdown.value;
 };
 
-const redirectToLogin = () => {
+const redirectToLogin = (destination = '/') => {
     showProfileDropdown.value = false;
-    return navigateTo("/auth/login");
+    return navigateTo({ path: "/auth/login", query: { redirect: destination } });
 };
 
 const requireAuth = (event?: Event) => {
     if (isAuthenticated.value) return true;
     event?.preventDefault();
-    redirectToLogin();
+    const href = event?.currentTarget instanceof HTMLAnchorElement ? event.currentTarget.getAttribute('href') : null;
+    redirectToLogin(href?.startsWith('/') ? href : '/');
     return false;
 };
 
@@ -557,17 +501,13 @@ const newsItems = computed(() => [
     },
 ]);
 
-const primeGames = ref([
-    {
-        id: "football-studio",
-        name: "FOOTBALL STUDIO",
-        provider: "Evolution",
-        image: "/games/football-studio.png",
-        href: "/jogo/football-studio",
-    },
-]);
+const managedGames = (tabKey: 'prime' | 'premium' | 'claude') => appConfig.value.games
+    .filter(game => game.tabKey === tabKey && game.status !== 'hidden')
+    .sort((a, b) => a.order - b.order)
+    .map(game => ({ ...game, id: game.gameId, name: game.title, provider: game.description, image: resolveAssetUrl(game.imageUrl), href: game.route }));
+const primeGames = computed(() => managedGames('prime'));
 
-const premiumGames = ref([
+const legacyPremiumGames = ref([
     {
         id: "bac-bo-en",
         name: "BAC BO EN",
@@ -604,17 +544,9 @@ const premiumGames = ref([
         image: "/games/aviator.png",
     },
 ]);
+const premiumGames = computed(() => managedGames('premium'));
 
-const claudeGames = computed(() => [
-    {
-        id: "football-studio",
-        name: "FOOTBALL STUDIO ENGLISH",
-        image: "/games/football-studio.png",
-        checkoutUrl:
-            appConfig.value.links.checkoutSemGale ||
-            CHECKOUT_URLS.legacySemGale,
-    },
-]);
+const claudeGames = computed(() => managedGames('claude').map(game => ({ ...game, checkoutUrl: appConfig.value.links.checkoutSemGale || CHECKOUT_URLS.legacySemGale })));
 
 const showGrupoModal = ref(false);
 const openGrupoModal = () => {
@@ -637,6 +569,23 @@ const handleLockedGameClick = (event: MouseEvent, gameId: string) => {
     const game = claudeGames.value.find((item) => item.id === gameId);
     const lockedCheckoutUrl = game?.checkoutUrl || checkoutUrl.value;
     window.open(lockedCheckoutUrl, "_blank", "noopener,noreferrer");
+};
+
+const handleManagedGameClick = (event: MouseEvent, game: ReturnType<typeof managedGames>[number] & { checkoutUrl?: string }) => {
+    if (game.status !== 'enabled') {
+        event.preventDefault();
+        window.alert(game.status === 'maintenance' ? 'Este jogo está temporariamente em manutenção.' : 'Este jogo está bloqueado no momento.');
+        return;
+    }
+    if (game.requiresLogin && !requireAuth(event)) return;
+    if (game.tabKey === 'prime') return;
+    event.preventDefault();
+    if (isSubscribed.value) {
+        navigateTo(game.route);
+        return;
+    }
+    const lockedCheckoutUrl = game.checkoutUrl || checkoutUrl.value;
+    window.open(lockedCheckoutUrl, '_blank', 'noopener,noreferrer');
 };
 
 const usefulLinks = computed(() => [
@@ -864,10 +813,12 @@ const highlights = ref([
 }
 
 /* Sidebar */
-.sidebar {
+.home-aside {
     width: 280px;
     flex-shrink: 0;
+    order: 2;
 }
+.center-content { order: 1; }
 
 .btn-confirmar-compra {
     display: flex;
@@ -1441,12 +1392,12 @@ const highlights = ref([
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .main-content {
         flex-direction: column;
     }
 
-    .sidebar {
+    .home-aside {
         width: 100%;
         order: 2;
     }
@@ -1595,4 +1546,5 @@ const highlights = ref([
     display: block;
     border-radius: 16px;
 }
+.is-managed-locked { cursor: not-allowed; }
 </style>

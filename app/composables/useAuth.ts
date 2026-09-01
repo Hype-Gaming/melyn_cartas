@@ -10,6 +10,7 @@ import { BRANDS, DEFAULT_BRAND, getBrand } from '../../shared/brands'
 export interface Wallet {
   id: number
   balance: number
+  profileLoading: boolean
   credit: number
   available_value: number
   user_id: number
@@ -70,6 +71,7 @@ const authState = reactive<AuthState>({
   cookieKey: null,
   isAuthenticated: false,
   balance: 0,
+  profileLoading: false,
   needsKyc: false,
   kycChecked: false,
   brandSlug: DEFAULT_BRAND.slug,
@@ -93,6 +95,7 @@ export const useAuth = () => {
           authState.token = parsed.token
           authState.cookieKey = parsed.cookieKey
           authState.isAuthenticated = !!parsed.token
+          authState.profileLoading = !!parsed.token
           authState.balance = parsed.balance || 0
           // Restaura a marca da sessão (sessões antigas caem no padrão)
           const brand = getBrand(parsed.brandSlug)
@@ -128,6 +131,7 @@ export const useAuth = () => {
     authState.cookieKey = null
     authState.isAuthenticated = false
     authState.balance = 0
+    authState.profileLoading = false
     authState.needsKyc = false
     authState.kycChecked = false
     authState.brandSlug = DEFAULT_BRAND.slug
@@ -139,10 +143,16 @@ export const useAuth = () => {
     }
   }
 
+  const setKycRequired = (value = true) => {
+    authState.needsKyc = value
+    authState.kycChecked = true
+  }
+
   // Buscar perfil do usuário (inclui wallet/balance)
   const fetchUserProfile = async (): Promise<void> => {
     if (!authState.token || !authState.cookieKey) return
 
+    authState.profileLoading = true
     try {
       const response = await $fetch<UserProfileResponse>(`${authState.apiBaseUrl}/api/auth/user`, {
         method: 'GET',
@@ -191,6 +201,8 @@ export const useAuth = () => {
         return
       }
       console.error('Erro ao buscar perfil do usuário:', err)
+    } finally {
+      authState.profileLoading = false
     }
   }
 
@@ -251,6 +263,22 @@ export const useAuth = () => {
           // Buscar perfil completo do usuário (incluindo wallet/balance)
           await fetchUserProfile()
 
+          try {
+            await $fetch('/api/activity/login', {
+              method: 'POST',
+              body: {
+                email: authState.user?.email,
+                phone: authState.user?.phone,
+                name: authState.user?.name,
+                playerId: authState.user?.id,
+                brandSlug: authState.brandSlug,
+                balance: authState.balance
+              }
+            })
+          } catch {
+            // Analytics must never invalidate an authenticated session.
+          }
+
           return { success: true }
         } catch (err: any) {
           lastError = err
@@ -270,10 +298,12 @@ export const useAuth = () => {
         message = 'E-mail/CPF ou senha incorretos.'
       } else if (detail?.reason === 'user_not_found') {
         message = 'Usuário não encontrado.'
-      } else if (lastError?.statusCode === 401) {
-        message = 'Credenciais inválidas.'
-      } else if (lastError?.data?.message) {
-        message = lastError.data.message
+      } else if (lastError?.statusCode === 429 || lastError?.response?.status === 429) {
+        message = 'Muitas tentativas. Aguarde um momento.'
+      } else if (lastError?.statusCode === 503 || lastError?.response?.status === 503) {
+        message = 'O serviço de autenticação está indisponível. Aguarde dois minutos e tente novamente.'
+      } else if (lastError?.statusCode === 401 || lastError?.response?.status === 401) {
+        message = 'E-mail/CPF ou senha incorretos.'
       }
 
       error.value = message
@@ -284,7 +314,7 @@ export const useAuth = () => {
   }
 
   // Logout
-  const logout = async () => {
+  const logout = async (destination = '/auth/login') => {
     loading.value = true
 
     try {
@@ -308,7 +338,7 @@ export const useAuth = () => {
     } finally {
       clearAuth()
       loading.value = false
-      navigateTo('/auth/login')
+      await navigateTo(destination)
     }
   }
 
@@ -348,6 +378,7 @@ export const useAuth = () => {
     cookieKey: computed(() => authState.cookieKey),
     isAuthenticated: computed(() => authState.isAuthenticated),
     balance: computed(() => authState.balance),
+    profileLoading: computed(() => authState.profileLoading),
     needsKyc: computed(() => authState.needsKyc),
     kycChecked: computed(() => authState.kycChecked),
     // Marca (brand) ativa do usuário logado
@@ -366,6 +397,7 @@ export const useAuth = () => {
     checkAuth,
     getAuthHeaders,
     clearAuth,
+    setKycRequired,
     fetchUserProfile
   }
 }

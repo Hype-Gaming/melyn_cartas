@@ -3,29 +3,32 @@
         <div class="visual-bootstrap-spinner"></div>
     </div>
 
+    <div v-else-if="showMaintenance" class="maintenance-screen">
+        <div class="maintenance-card">
+            <AppLogo class="maintenance-logo" />
+            <h1>{{ appConfig.maintenance.title }}</h1>
+            <p>{{ appConfig.maintenance.message }}</p>
+        </div>
+    </div>
+
     <div v-else id="app">
         <PageLoader />
-        <NuxtPage />
-        <div v-if="showMaintenance" class="maintenance-screen">
-            <div class="maintenance-card">
-                <AppLogo class="maintenance-logo" />
-                <h1>{{ appConfig.maintenance.title }}</h1>
-                <p>{{ appConfig.maintenance.message }}</p>
-            </div>
-        </div>
+        <NuxtLayout><NuxtPage /></NuxtLayout>
         <UpdateNotification />
-        <KycModal :show="showKycModal" @logout="handleKycLogout" />
+        <KycModal :show="showKycModal" @dismiss="kycDismissed = true" />
         <BlockedOverlay v-if="isBlocked" />
+        <NotificationPrompt :allowed="!showKycModal && !isBlocked" />
     </div>
 </template>
 
 <script setup lang="ts">
-const { needsKyc, kycChecked, isAuthenticated, logout, fetchUserProfile } =
+const { needsKyc, kycChecked, isAuthenticated, fetchUserProfile } =
     useAuth();
 const { send: sendHeartbeat } = useHeartbeat();
 const { isBlocked } = useAccountBlocked();
 const route = useRoute();
 const { config: appConfig, ready: visualReady, loadAppConfig, resolveAssetUrl } = useVisualConfig();
+const kycDismissed = ref(false);
 
 const showMaintenance = computed(() =>
     appConfig.value.maintenance.active && !route.path.startsWith("/admin"),
@@ -39,6 +42,7 @@ const showKycModal = computed(() => {
         isAuthenticated.value &&
         kycChecked.value &&
         needsKyc.value &&
+        !kycDismissed.value &&
         !isAuthRoute &&
         !isBlocked.value
     );
@@ -57,16 +61,13 @@ onMounted(async () => {
 watch(
     () => route.path,
     async () => {
+        kycDismissed.value = false;
         if (isAuthenticated.value && !route.path.startsWith("/auth")) {
             await fetchUserProfile();
             sendHeartbeat();
         }
     },
 );
-
-const handleKycLogout = async () => {
-    await logout();
-};
 
 // Componente raiz da aplicação Nuxt
 useHead(() => ({

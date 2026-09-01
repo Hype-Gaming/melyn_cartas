@@ -12,7 +12,6 @@ const ALLOWED_TYPES = new Set([
   'image/jpeg',
   'image/webp',
   'image/gif',
-  'image/svg+xml',
   'image/x-icon'
 ])
 
@@ -37,10 +36,6 @@ export const sniffImageType = (buffer: Buffer): string | null => {
     && buffer.subarray(8, 12).toString('ascii') === 'WEBP'
   ) return 'image/webp'
 
-  // SVG não possui assinatura binária. Limitamos a inspeção ao início do arquivo.
-  const head = buffer.subarray(0, 1024).toString('utf8').replace(/^\uFEFF/, '').trimStart()
-  if (head.startsWith('<?xml') || head.startsWith('<svg')) return 'image/svg+xml'
-
   return null
 }
 
@@ -56,7 +51,7 @@ export const validateMedia = (buffer: Buffer): MediaValidation => {
 
   const contentType = sniffImageType(buffer)
   if (!contentType || !ALLOWED_TYPES.has(contentType)) {
-    return { ok: false, error: 'Formato não suportado. Use PNG, JPEG, WEBP, GIF, SVG ou ICO.' }
+    return { ok: false, error: 'Formato não suportado. Use PNG, JPEG, WEBP, GIF ou ICO. SVG/HTML não são aceitos.' }
   }
 
   return { ok: true, contentType }
@@ -90,7 +85,9 @@ export const collectMediaIds = (config: AppConfig): Set<string> => {
     config.images?.blocked,
     config.images?.premium,
     config.images?.live,
-    ...(Array.isArray(config.images?.banners) ? config.images.banners : [])
+    ...(Array.isArray(config.images?.banners) ? config.images.banners : []),
+    ...(Array.isArray(config.games) ? config.games.map(game => game.imageUrl) : []),
+    ...(Array.isArray(config.banners) ? config.banners.flatMap(banner => [banner.desktopImageUrl, banner.mobileImageUrl]) : [])
   ]
 
   return new Set(candidates.map(idFromUrl).filter((id): id is string => Boolean(id)))

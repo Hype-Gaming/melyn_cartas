@@ -2,7 +2,7 @@
     <div class="blk-overlay">
         <div class="blk-glow"></div>
         <div class="blk-card">
-            <button class="blk-close" @click="onLogout" aria-label="Voltar para o login">
+            <button class="blk-close" @click="handleClose" aria-label="Fechar aviso">
                 <Icon name="ph:x-bold" />
             </button>
 
@@ -36,6 +36,10 @@ const blockedImage = computed(() =>
 
 const { logout } = useAuth();
 const { setBlocked } = useAccountBlocked();
+const props = withDefaults(defineProps<{ loginMode?: boolean }>(), {
+    loginMode: false,
+});
+const emit = defineEmits<{ close: [] }>();
 
 const loadSupportLink = async () => {
     if (appConfig.value.links.whatsappSupport) {
@@ -51,9 +55,13 @@ const loadSupportLink = async () => {
 };
 
 // X: fecha o overlay e volta para a tela de autenticação (logout redireciona pro login).
-const onLogout = async () => {
+const handleClose = async () => {
+    if (props.loginMode) {
+        emit("close");
+        return;
+    }
     setBlocked(false);
-    await logout();
+    await logout("/auth/login?reason=blocked");
 };
 
 // Trava o scroll do body enquanto o overlay estiver ativo.

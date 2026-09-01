@@ -6,6 +6,11 @@
                 <p class="subtitle">Acesse sua conta</p>
             </div>
 
+            <div v-if="reasonMessage" class="reason-message" role="alert">
+                <Icon name="ph:info-bold" />
+                {{ reasonMessage }}
+            </div>
+
             <!-- Informativo -->
             <div class="info-banner">
                 <Icon name="ph:info-bold" />
@@ -91,6 +96,11 @@
                 </div>
             </div>
         </div>
+        <BlockedOverlay
+            v-if="showBlockedModal"
+            login-mode
+            @close="dismissBlockedModal"
+        />
     </div>
 </template>
 
@@ -98,15 +108,34 @@
 import { BRANDS } from "../../../shared/brands";
 
 definePageMeta({
-    layout: "default",
+    layout: "bare",
 });
 
 const brands = BRANDS;
+const route = useRoute();
+const router = useRouter();
 
 const { login, loading, error, isAuthenticated } = useAuth();
 
 const errorMessage = ref("");
 const showPassword = ref(false);
+const showBlockedModal = ref(route.query.reason === "blocked");
+
+const reasonMessage = computed(() => {
+    switch (route.query.reason) {
+        case "session_expired":
+            return "Sua sessão expirou. Faça login novamente.";
+        case "wrong_tenant":
+            return "Esta sessão pertence a outro aplicativo. Faça login com a conta correta.";
+        default:
+            return "";
+    }
+});
+
+const dismissBlockedModal = async () => {
+    showBlockedModal.value = false;
+    await router.replace({ path: "/auth/login" });
+};
 
 const form = reactive({
     identifier: "",
@@ -139,7 +168,10 @@ const handleLogin = async () => {
     );
 
     if (result.success) {
-        navigateTo("/");
+        const redirect = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/") && !route.query.redirect.startsWith("//")
+            ? route.query.redirect
+            : "/";
+        navigateTo(redirect);
     } else {
         errorMessage.value = result.message || "Erro ao fazer login";
     }
@@ -187,6 +219,19 @@ const handleLogin = async () => {
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+.reason-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.35);
+    border-radius: 8px;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--text-main);
+    font-size: 14px;
 }
 
 .login-type-toggle {
