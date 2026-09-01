@@ -24,6 +24,12 @@ const color = (value: unknown, fallback: string) => {
   return /^(#[0-9a-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\))$/i.test(result) ? result : fallback
 }
 
+const bool = (value: unknown, fallback: boolean) => typeof value === 'boolean' ? value : fallback
+const number = (value: unknown, fallback: number, min = 0, max = 1_000_000) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback
+}
+
 export const normalizeAppConfig = (input: unknown): AppConfig => {
   const source = input && typeof input === 'object' ? input as Record<string, any> : {}
   const defaults = cloneDefaultAppConfig()
@@ -72,6 +78,62 @@ export const normalizeAppConfig = (input: unknown): AppConfig => {
     ? source.maintenance.active : defaults.maintenance.active
   config.maintenance.title = text(source.maintenance?.title, defaults.maintenance.title, 120)
   config.maintenance.message = text(source.maintenance?.message, defaults.maintenance.message, 500)
+
+  config.notificationPrompt = {
+    enabled: bool(source.notificationPrompt?.enabled, defaults.notificationPrompt.enabled),
+    title: text(source.notificationPrompt?.title, defaults.notificationPrompt.title, 120),
+    message: text(source.notificationPrompt?.message, defaults.notificationPrompt.message, 500),
+    activateLabel: text(source.notificationPrompt?.activateLabel, defaults.notificationPrompt.activateLabel, 80),
+    laterLabel: text(source.notificationPrompt?.laterLabel, defaults.notificationPrompt.laterLabel, 80),
+    retryDays: number(source.notificationPrompt?.retryDays, defaults.notificationPrompt.retryDays, 1, 365)
+  }
+
+  config.signalBalanceGate = {
+    enabled: bool(source.signalBalanceGate?.enabled, defaults.signalBalanceGate.enabled),
+    minimumBalance: number(source.signalBalanceGate?.minimumBalance, defaults.signalBalanceGate.minimumBalance),
+    title: text(source.signalBalanceGate?.title, defaults.signalBalanceGate.title, 120),
+    message: text(source.signalBalanceGate?.message, defaults.signalBalanceGate.message, 500),
+    ctaLabel: text(source.signalBalanceGate?.ctaLabel, defaults.signalBalanceGate.ctaLabel, 80),
+    ctaUrl: nullableAsset(source.signalBalanceGate?.ctaUrl, defaults.signalBalanceGate.ctaUrl)
+  }
+
+  const statuses = new Set(['enabled', 'blocked', 'hidden', 'maintenance'])
+  const tabs = new Set(['prime', 'premium', 'claude'])
+  const rawGames = Array.isArray(source.games) ? source.games : defaults.games
+  config.games = rawGames.slice(0, 100).map((game: any, index: number) => ({
+    gameId: text(game?.gameId, '', 80).replace(/[^a-z0-9_-]/gi, ''),
+    title: text(game?.title, `Jogo ${index + 1}`, 120),
+    description: game?.description == null ? null : text(game.description, '', 300),
+    imageUrl: nullableAsset(game?.imageUrl, null),
+    route: url(game?.route, ''),
+    tabKey: tabs.has(game?.tabKey) ? game.tabKey : 'prime',
+    order: number(game?.order, index + 1, 0, 999),
+    status: statuses.has(game?.status) ? game.status : 'enabled',
+    requiresLogin: bool(game?.requiresLogin, true),
+    signalBalanceGate: {
+      enabled: typeof game?.signalBalanceGate?.enabled === 'boolean' ? game.signalBalanceGate.enabled : undefined,
+      minimumBalance: game?.signalBalanceGate?.minimumBalance == null ? undefined : number(game.signalBalanceGate.minimumBalance, config.signalBalanceGate.minimumBalance),
+      title: game?.signalBalanceGate?.title ? text(game.signalBalanceGate.title, '', 120) : undefined,
+      message: game?.signalBalanceGate?.message ? text(game.signalBalanceGate.message, '', 500) : undefined,
+      ctaLabel: game?.signalBalanceGate?.ctaLabel ? text(game.signalBalanceGate.ctaLabel, '', 80) : undefined,
+      ctaUrl: game?.signalBalanceGate?.ctaUrl == null ? undefined : nullableAsset(game.signalBalanceGate.ctaUrl, null)
+    }
+  })).filter(game => game.gameId && game.route)
+
+  const rawManagedBanners = Array.isArray(source.banners) ? source.banners : defaults.banners
+  config.banners = rawManagedBanners.slice(0, 50).map((banner: any, index: number) => ({
+    id: text(banner?.id, `banner-${index + 1}`, 80).replace(/[^a-z0-9_-]/gi, ''),
+    placement: banner?.placement === 'ranking' ? 'ranking' : 'home',
+    desktopImageUrl: nullableAsset(banner?.desktopImageUrl, '') || '',
+    mobileImageUrl: nullableAsset(banner?.mobileImageUrl, null),
+    altText: text(banner?.altText, config.brand.name, 200),
+    targetUrl: nullableAsset(banner?.targetUrl, null),
+    openInNewTab: bool(banner?.openInNewTab, false),
+    enabled: bool(banner?.enabled, true),
+    order: number(banner?.order, index + 1, 0, 999),
+    startsAt: banner?.startsAt && !Number.isNaN(Date.parse(banner.startsAt)) ? new Date(banner.startsAt).toISOString() : null,
+    endsAt: banner?.endsAt && !Number.isNaN(Date.parse(banner.endsAt)) ? new Date(banner.endsAt).toISOString() : null
+  })).filter(banner => banner.id && banner.desktopImageUrl)
   config.appId = APP_ID
   if (source.updatedAt) config.updatedAt = source.updatedAt
   return config
@@ -99,12 +161,14 @@ export const saveAppConfig = async (input: unknown): Promise<AppConfig> => {
   const merged = cloneDefaultAppConfig() as Record<string, any>
   const existing = current || {}
 
-  for (const group of ['brand', 'theme', 'content', 'images', 'links', 'features', 'maintenance']) {
+  for (const group of ['brand', 'theme', 'content', 'images', 'links', 'features', 'maintenance', 'notificationPrompt', 'signalBalanceGate']) {
     merged[group] = { ...merged[group], ...(existing as any)[group], ...(patch as any)[group] }
   }
   merged.menu = Array.isArray(patch.menu)
     ? patch.menu
     : Array.isArray((existing as any).menu) ? (existing as any).menu : merged.menu
+  merged.games = Array.isArray(patch.games) ? patch.games : Array.isArray((existing as any).games) ? (existing as any).games : merged.games
+  merged.banners = Array.isArray(patch.banners) ? patch.banners : Array.isArray((existing as any).banners) ? (existing as any).banners : merged.banners
 
   const config = normalizeAppConfig(merged)
   const now = new Date()

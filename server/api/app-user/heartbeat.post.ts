@@ -22,13 +22,14 @@ export default defineEventHandler(async (event) => {
   if (body?.phone) set.phone = String(body.phone).trim()
   if (body?.brand_slug) set.brand_slug = String(body.brand_slug).trim()
   if (body?.cactus_user_id != null) set.cactus_user_id = body.cactus_user_id
+  if (Number.isFinite(Number(body?.balance))) set.last_known_balance = Number(body.balance)
 
   const db = await getDb()
   const doc = await db.collection('app_users').findOneAndUpdate(
     { email },
     {
       $set: set,
-      $setOnInsert: { first_seen_at: now, blocked: false }
+      $setOnInsert: { first_seen_at: now, access_count: 1, blocked: false }
     },
     { upsert: true, returnDocument: 'after' }
   )
