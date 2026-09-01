@@ -1,14 +1,15 @@
 <template>
-  <AdminPasswordGate v-if="needsLogin" />
-
   <main class="visual-page">
     <div class="visual-wrap">
       <header class="visual-topbar">
         <div>
-          <NuxtLink to="/admin" class="back-link"><Icon name="ph:arrow-left-bold" /> Painel</NuxtLink>
           <h1><Icon name="ph:palette-bold" /> Visual do app</h1>
           <p>As alterações salvas entram no app após atualizar a página.</p>
         </div>
+        <span class="save-state" :class="{ dirty: isDirty }" role="status">
+          <Icon :name="isDirty ? 'ph:circle-fill' : 'ph:check-circle-bold'" aria-hidden="true" />
+          {{ isDirty ? 'Alterações não salvas' : 'Tudo salvo' }}
+        </span>
         <button class="ghost-btn" :disabled="savingDraft || loading" @click="saveDraft">
           <Icon name="ph:file-dashed-bold" /> {{ savingDraft ? 'Salvando...' : 'Salvar rascunho' }}
         </button>
@@ -165,7 +166,7 @@
                   <label class="field"><span>Slug para abrir o jogo</span><input v-model="game.startGameSlug" placeholder="evolution/bac-bo-ao-vivo" /></label>
                   <label class="field"><span>Catalogador — coleção</span><input v-model="game.catalogadorCollection" placeholder="evolution" /></label>
                   <label class="field"><span>Catalogador — jogo</span><input v-model="game.catalogadorGame" placeholder="Bac Bo" /></label>
-                  <label class="field"><span>Catalogador — alternativas</span><input :value="(game.catalogadorFallbackGames || []).join(', ')" placeholder="Bac Bo English, Bac Bo A" @input="setFallbackGames(game, ($event.target as HTMLInputElement).value)" /></label>
+                  <label class="field"><span>Catalogador — alternativas</span><input :value="(game.catalogadorFallbackGames || []).join(', ')" placeholder="Bac Bo English, Bac Bo A" @change="setFallbackGames(game, ($event.target as HTMLInputElement).value)" /></label>
                   <label class="field"><span>WebSocket de sinais</span><input v-model="game.signalUrl" placeholder="wss://ws-signals.grupoautoma.com/ws" /></label>
                   <label class="field"><span>Sinal — coleção</span><input v-model="game.signalCollection" placeholder="bac_bo_english" /></label>
                   <label class="field"><span>Sinal — nome</span><input v-model="game.signalName" placeholder="bac-bo-ao-vivo-hypeg1" /></label>
@@ -234,7 +235,7 @@
       </template>
     </div>
 
-    <div v-if="toast" class="toast" :class="toastType">{{ toast }}</div>
+    <div v-if="toast" class="toast" :class="toastType" role="alert" aria-live="assertive">{{ toast }}</div>
   </main>
 </template>
 
@@ -242,7 +243,7 @@
 import type { AppConfig, ThemeKey } from '../../../shared/appConfig'
 import { cloneDefaultAppConfig } from '../../../shared/appConfig'
 
-definePageMeta({ middleware: 'admin', layout: 'bare' })
+definePageMeta({ middleware: 'admin', layout: 'admin' })
 
 type BrandKey = keyof AppConfig['brand']
 type ContentKey = keyof AppConfig['content']
@@ -332,7 +333,23 @@ const notify = (message: string, type: 'ok' | 'error' = 'ok') => {
   toastTimer = window.setTimeout(() => { toast.value = '' }, 3500)
 }
 
-const applyDraft = (config: AppConfig) => Object.assign(draft, JSON.parse(JSON.stringify(config)))
+// Snapshot do ultimo estado sincronizado com o servidor. E o unico ponto onde o
+// draft e sobrescrito, entao serve de linha de base para detectar alteracoes.
+const savedSnapshot = ref('')
+const applyDraft = (config: AppConfig) => {
+  Object.assign(draft, JSON.parse(JSON.stringify(config)))
+  savedSnapshot.value = JSON.stringify(draft)
+}
+const isDirty = computed(() => Boolean(savedSnapshot.value) && JSON.stringify(draft) !== savedSnapshot.value)
+
+// Com 9 abas e formulario longo, sair sem salvar era perda silenciosa.
+const warnOnLeave = (event: BeforeUnloadEvent) => {
+  if (!isDirty.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+onMounted(() => window.addEventListener('beforeunload', warnOnLeave))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', warnOnLeave))
 
 const loadConfig = async () => {
   loading.value = true
@@ -422,32 +439,59 @@ const safePreviewUrl = (value: string | null) => {
 
 watch(needsLogin, value => { if (!value) loadConfig() })
 onMounted(() => { if (!needsLogin.value) loadConfig() })
+watch(needsLogin, (trancado) => { if (!trancado) loadConfig() })
 onBeforeUnmount(() => window.clearTimeout(toastTimer))
 useHead({ title: 'Visual do app - Painel Admin' })
 </script>
 
 <style scoped>
-.visual-page { min-height: 100vh; background: #08090d; color: #f5f6fa; padding: 28px 20px 64px; font-family: Manrope, sans-serif; }
+.visual-page { min-height: 100vh; background: var(--adm-bg); color: var(--adm-text); padding: 28px 20px 64px; font-family: Manrope, sans-serif; }
 .visual-wrap { width: min(1120px, 100%); margin: 0 auto; }
-.visual-topbar { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.visual-topbar {
+  position: sticky; top: 0; z-index: 15;
+  display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 24px; padding: 14px 0;
+  border-bottom: 1px solid var(--adm-border);
+  background: color-mix(in srgb, var(--adm-bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+}
+.visual-topbar > div:first-child { flex: 1 1 260px; }
+
+/* Indicador de alteracoes pendentes */
+.save-state {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 12px; border-radius: 999px;
+  border: 1px solid var(--adm-border);
+  color: var(--adm-muted);
+  font-size: 12px; font-weight: 700;
+}
+.save-state :deep(svg) { font-size: 13px; color: var(--adm-green); }
+.save-state.dirty { color: var(--adm-amber); border-color: color-mix(in srgb, var(--adm-amber) 40%, transparent); background: color-mix(in srgb, var(--adm-amber) 10%, transparent); }
+.save-state.dirty :deep(svg) { color: var(--adm-amber); font-size: 9px; }
 .visual-topbar h1 { display: flex; align-items: center; gap: 10px; margin: 12px 0 6px; font-size: 30px; }
-.visual-topbar p, .hint { margin: 0; color: #9095a5; }
-.back-link { display: inline-flex; align-items: center; gap: 6px; color: #a78bfa; text-decoration: none; }
+.visual-topbar p, .hint { margin: 0; color: var(--adm-muted); }
+.back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--adm-accent); text-decoration: none; }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.tab { display: inline-flex; align-items: center; gap: 7px; padding: 10px 15px; border: 1px solid #252936; border-radius: 10px; background: #11131a; color: #9095a5; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; transition: border-color .15s, color .15s, background .15s; }
-.tab:hover { color: #dcdff0; border-color: #343847; }
-.tab.ativa { border-color: #8b7cf6; background: #171531; color: #fff; }
-.panel, .state-card { margin-bottom: 18px; padding: 24px; border: 1px solid #252936; border-radius: 16px; background: #11131a; }
+@media (max-width: 780px) {
+  /* 9 abas quebravam em 4 linhas; vira trilho rolavel com pistas nas bordas. */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; }
+}
+.tab { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 10px 15px; border: 1px solid var(--adm-border); border-radius: 10px; background: var(--adm-panel); color: var(--adm-muted); cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; transition: border-color .15s, color .15s, background .15s; }
+.tab:hover { color: var(--adm-text); border-color: var(--adm-border-soft); }
+.tab.ativa { border-color: var(--adm-accent); background: var(--adm-accent-soft); color: #fff; }
+.panel, .state-card { margin-bottom: 18px; padding: 24px; border: 1px solid var(--adm-border); border-radius: 16px; background: var(--adm-panel); }
 .panel h2 { margin: 0 0 20px; font-size: 18px; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .panel-head > div h2 { margin-bottom: 5px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.field { display: grid; gap: 7px; color: #cdd0db; font-size: 13px; font-weight: 700; }
+.field { display: grid; gap: 7px; color: var(--adm-text); font-size: 13px; font-weight: 700; }
 .field.wide { grid-column: 1 / -1; }
-input, textarea { width: 100%; padding: 11px 12px; border: 1px solid #303544; border-radius: 9px; outline: none; background: #0b0d12; color: #fff; font: inherit; }
-input:focus, textarea:focus { border-color: #8b7cf6; box-shadow: 0 0 0 3px rgba(139, 124, 246, .12); }
+input, textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--adm-border); border-radius: 9px; outline: none; background: var(--adm-bg-2); color: #fff; font: inherit; }
+input:focus, textarea:focus { border-color: var(--adm-accent); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), .12); }
 .color-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.color-field { display: grid; gap: 7px; color: #cdd0db; font-size: 13px; font-weight: 700; }
+.color-field { display: grid; gap: 7px; color: var(--adm-text); font-size: 13px; font-weight: 700; }
 .color-field > div { display: flex; gap: 8px; }
 .color-field input[type='color'] { width: 46px; min-width: 46px; height: 42px; padding: 4px; cursor: pointer; }
 .color-text { min-width: 0; }
@@ -456,34 +500,34 @@ input:focus, textarea:focus { border-color: #8b7cf6; box-shadow: 0 0 0 3px rgba(
 .banners-head h3 { margin: 0; font-size: 15px; }
 .banner-item { position: relative; }
 .banner-item > .icon-btn { position: absolute; top: 26px; right: 8px; width: 30px; height: 30px; }
-.empty-banners { padding: 22px; border: 1px dashed #303544; border-radius: 10px; color: #6f7488; text-align: center; }
+.empty-banners { padding: 22px; border: 1px dashed var(--adm-border); border-radius: 10px; color: var(--adm-faint); text-align: center; }
 .managed-list { display: grid; gap: 16px; }
-.managed-card { position: relative; padding: 18px; border: 1px solid #303544; border-radius: 12px; background: #10131d; }
+.managed-card { position: relative; padding: 18px; border: 1px solid var(--adm-border); border-radius: 12px; background: var(--adm-panel); }
 .managed-card > .icon-btn { position: absolute; top: 10px; right: 10px; }
-.managed-card select { min-height: 42px; border: 1px solid #303544; border-radius: 8px; background: #0c0f18; color: #fff; padding: 0 10px; }
+.managed-card select { min-height: 42px; border: 1px solid var(--adm-border); border-radius: 8px; background: var(--adm-panel-2); color: #fff; padding: 0 10px; }
 .toggle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.toggle { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #2d3140; border-radius: 10px; background: #0c0e14; }
-.toggle input { width: 18px; height: 18px; accent-color: #8b7cf6; }
-.toggle.danger { width: max-content; margin-bottom: 18px; border-color: #69313b; }
+.toggle { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--adm-border); border-radius: 10px; background: var(--adm-bg-2); }
+.toggle input { width: 18px; height: 18px; accent-color: var(--adm-accent); }
+.toggle.danger { width: max-content; margin-bottom: 18px; border-color: var(--adm-red); }
 .menu-list { display: grid; gap: 10px; }
-.tech-block { margin-top: 12px; padding: 12px; border: 1px solid var(--adm-border, #292d45); border-radius: 10px; }
+.tech-block { margin-top: 12px; padding: 12px; border: 1px solid var(--adm-border, var(--adm-border)); border-radius: 10px; }
 .tech-block summary { cursor: pointer; font-weight: 700; }
 .tech-hint { margin: 8px 0 12px; font-size: 12px; opacity: .75; }
 .menu-row { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 90px 42px; gap: 8px; }
 .primary-btn, .ghost-btn, .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 9px; cursor: pointer; font-weight: 800; }
-.primary-btn { padding: 12px 18px; border: 0; color: #fff; background: linear-gradient(135deg, #8b7cf6, #6657d8); }
+.primary-btn { padding: 12px 18px; border: 0; color: #fff; background: linear-gradient(135deg, var(--adm-accent), var(--color-primary-dark)); }
 .primary-btn:disabled, .ghost-btn:disabled { opacity: .55; cursor: wait; }
-.ghost-btn { padding: 9px 13px; border: 1px solid #343847; color: #eee; background: #191c25; }
-.icon-btn { border: 0; color: #d9b76e; background: #242033; }
+.ghost-btn { padding: 9px 13px; border: 1px solid var(--adm-border-soft); color: #eee; background: var(--adm-panel-2); }
+.icon-btn { border: 0; color: var(--adm-gold); background: var(--adm-accent-soft); }
 .bottom-actions { display: flex; justify-content: flex-end; margin-top: 24px; }
-.toast { position: fixed; right: 24px; bottom: 24px; z-index: 20; padding: 14px 18px; border-radius: 10px; color: #fff; background: #16794d; box-shadow: 0 14px 40px #0008; }
-.toast.error { background: #a82e42; }
+.toast { position: fixed; right: 24px; bottom: 24px; z-index: 20; padding: 14px 18px; border-radius: 10px; color: #fff; background: var(--adm-green); box-shadow: 0 14px 40px #0008; }
+.toast.error { background: var(--adm-red); }
 @media (max-width: 980px) { .media-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 780px) {
   .visual-topbar, .panel-head { align-items: stretch; flex-direction: column; }
   .form-grid, .color-grid, .media-grid { grid-template-columns: 1fr; }
   .toggle-grid { grid-template-columns: repeat(2, 1fr); }
-  .menu-row { grid-template-columns: 1fr 1fr; padding-bottom: 14px; border-bottom: 1px solid #252936; }
+  .menu-row { grid-template-columns: 1fr 1fr; padding-bottom: 14px; border-bottom: 1px solid var(--adm-border); }
   .icon-btn { min-height: 42px; }
 }
 @media (max-width: 520px) { .toggle-grid { grid-template-columns: 1fr; } .tab { flex: 1 1 42%; } }

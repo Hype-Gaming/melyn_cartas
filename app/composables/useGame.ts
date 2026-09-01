@@ -46,13 +46,17 @@ export const useGame = () => {
         `${SIGNAL_API_BASE}/api/game-config/${ref.collection}/${ref.name}`
       )
 
+      // O painel tem precedencia. A guarda antiga abortava antes de consulta-lo,
+      // entao um 200 sem bloco `sinais_wss` derrubava o WebSocket configurado.
       const wss = response?.sinais_wss
-      if (!wss?.signalUrl || !wss?.signalName) return null
+      const signalUrl = getSignalUrl(gameId) || wss?.signalUrl
+      const signalName = wss?.signalName || ref.name
+      if (!signalUrl || !signalName) return null
 
       const config: GameSignalConfig = {
-        signalUrl: getSignalUrl(gameId) || wss.signalUrl,
-        signalName: wss.signalName,
-        signalCollection: wss.signalCollection ?? undefined
+        signalUrl,
+        signalName,
+        signalCollection: wss?.signalCollection ?? ref.collection
       }
 
       gameSignalConfig.value = config
