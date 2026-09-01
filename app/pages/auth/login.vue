@@ -108,7 +108,7 @@
 import { BRANDS } from "../../../shared/brands";
 
 definePageMeta({
-    layout: "default",
+    layout: "bare",
 });
 
 const brands = BRANDS;

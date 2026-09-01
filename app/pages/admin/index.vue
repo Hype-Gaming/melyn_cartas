@@ -362,7 +362,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: "admin" });
+definePageMeta({ middleware: "admin", layout: "bare" });
 
 const { config: appConfig } = useVisualConfig();
 

@@ -229,7 +229,7 @@
 import type { AppConfig, ThemeKey } from '../../../shared/appConfig'
 import { cloneDefaultAppConfig } from '../../../shared/appConfig'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'bare' })
 
 type BrandKey = keyof AppConfig['brand']
 type ContentKey = keyof AppConfig['content']
@@ -305,7 +305,7 @@ const linkFields: Array<{ key: LinkKey; label: string }> = [
 
 const featureFields: Array<{ key: FeatureKey; label: string }> = [
   { key: 'home', label: 'Início' }, { key: 'games', label: 'Jogos' },
-  { key: 'lessons', label: 'Aulas' }, { key: 'ranking', label: 'Ranking' },
+  { key: 'lessons', label: 'Aulas' }, { key: 'ranking', label: 'Ranking' }, { key: 'profile', label: 'Perfil' },
   { key: 'links', label: 'Links úteis' }, { key: 'highlights', label: 'Destaques' },
   { key: 'management', label: 'Gestão' }, { key: 'live', label: 'Live' }
 ]

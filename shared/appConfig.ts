@@ -93,6 +93,7 @@ export interface AppConfig {
     games: boolean
     lessons: boolean
     ranking: boolean
+    profile: boolean
     links: boolean
     highlights: boolean
     management: boolean
@@ -175,14 +176,16 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     site: ''
   },
   features: {
-    home: true, games: true, lessons: true, ranking: true,
+    home: true, games: true, lessons: true, ranking: true, profile: true,
     links: true, highlights: true, management: true, live: true
   },
   menu: [
     { key: 'home', label: 'Início', icon: 'ph:house-bold', order: 1 },
     { key: 'games', label: 'Jogos', icon: 'ph:game-controller-bold', order: 2 },
     { key: 'lessons', label: 'Aulas', icon: 'ph:graduation-cap-bold', order: 3 },
-    { key: 'management', label: 'Gestão de Banca', icon: 'ph:wallet-bold', order: 4 }
+    { key: 'management', label: 'Gestão de Banca', icon: 'ph:wallet-bold', order: 4 },
+    { key: 'ranking', label: 'Ranking', icon: 'ph:trophy-bold', order: 5 },
+    { key: 'profile', label: 'Perfil', icon: 'ph:user-circle-bold', order: 6 }
   ],
   maintenance: {
     active: false,
