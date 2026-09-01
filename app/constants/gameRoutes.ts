@@ -133,6 +133,14 @@ export const GAME_ROUTE_DEFINITIONS: Record<string, GameRouteDefinition> = {
   }
 }
 
+/**
+ * Este arquivo deixou de ser a fonte da verdade: agora e o fallback do bloco
+ * tecnico que vive em appConfig.games, editavel em /admin/visual. Continua aqui
+ * para os jogos ja existentes seguirem funcionando sem depender do painel.
+ */
+export const hasGameRouteDefinition = (gameId: string): boolean =>
+  Boolean(GAME_ROUTE_DEFINITIONS[gameId])
+
 export const resolveGameRouteId = (gameId: string): string => {
   return GAME_ROUTE_DEFINITIONS[gameId]?.resolvedId || gameId
 }

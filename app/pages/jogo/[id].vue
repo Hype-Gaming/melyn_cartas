@@ -464,9 +464,9 @@
 </template>
 
 <script setup lang="ts">
-import { getCatalogadorQueries, getGameRouteConfig, resolveGameRouteId } from '../../constants/gameRoutes'
-
 const route = useRoute()
+// Config tecnica do jogo: painel primeiro, constants/gameRoutes.ts como fallback.
+const { getCatalogadorQueries, getGameRouteConfig, resolveGameRouteId } = useGameRoutes()
 const { isAuthenticated, balance, fetchUserProfile } = useAuth()
 const { openModal: openDepositModal } = useDeposit()
 const { config: appConfig } = useVisualConfig()

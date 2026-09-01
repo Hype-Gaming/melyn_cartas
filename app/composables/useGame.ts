@@ -1,7 +1,7 @@
-import { getGameRouteConfig } from '../constants/gameRoutes'
-
 // Composable para gerenciar jogos e integração com API
 const SIGNAL_API_BASE = 'https://api-apps-server.automagroup.com.br'
+// Usado quando nem o painel nem a API de config informam um WebSocket.
+const DEFAULT_SIGNAL_WS = 'wss://ws-signals.grupoautoma.com/ws'
 const UNAVAILABLE_SIGNAL_CONFIGS = new Set<string>()
 
 export interface GameSignalConfig {
@@ -14,6 +14,7 @@ export type StartGameErrorCode = 'KYC_REQUIRED' | 'START_GAME_REJECTED' | 'SESSI
 
 export const useGame = () => {
   const { token, cookieKey, clearAuth, brandSlug, user, setKycRequired } = useAuth()
+  const { getGameRouteConfig, getSignalUrl } = useGameRoutes()
   
   const gameUrl = ref<string>('')
   const isLoading = ref(false)
@@ -32,7 +33,7 @@ export const useGame = () => {
     const configKey = `${ref.collection}/${ref.name}`
     if (UNAVAILABLE_SIGNAL_CONFIGS.has(configKey)) {
       const fallback: GameSignalConfig = {
-        signalUrl: 'wss://ws-signals.grupoautoma.com/ws',
+        signalUrl: getSignalUrl(gameId) || DEFAULT_SIGNAL_WS,
         signalName: ref.name,
         signalCollection: ref.collection
       }
@@ -49,7 +50,7 @@ export const useGame = () => {
       if (!wss?.signalUrl || !wss?.signalName) return null
 
       const config: GameSignalConfig = {
-        signalUrl: wss.signalUrl,
+        signalUrl: getSignalUrl(gameId) || wss.signalUrl,
         signalName: wss.signalName,
         signalCollection: wss.signalCollection ?? undefined
       }
@@ -64,7 +65,7 @@ export const useGame = () => {
       if (!ref) return null
 
       const fallback: GameSignalConfig = {
-        signalUrl: 'wss://ws-signals.grupoautoma.com/ws',
+        signalUrl: getSignalUrl(gameId) || DEFAULT_SIGNAL_WS,
         signalName: ref.name,
         signalCollection: ref.collection
       }

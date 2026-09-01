@@ -30,6 +30,26 @@ export interface ManagedGame {
   status: ManagedGameStatus
   requiresLogin: boolean
   signalBalanceGate: Partial<SignalBalanceGate>
+
+  /**
+   * Bloco tecnico: o que antes vivia cravado em app/constants/gameRoutes.ts e
+   * exigia deploy para mudar. Campo vazio cai no valor daquele arquivo, entao a
+   * migracao e reversivel e um jogo mal preenchido no painel nao derruba o outro.
+   */
+  /** Slug usado para abrir o jogo na casa. Ex.: 'evolution/bac-bo-ao-vivo'. */
+  startGameSlug: string
+  /** Colecao do catalogador de resultados. Ex.: 'evolution'. */
+  catalogadorCollection: string
+  /** Nome do jogo no catalogador. Ex.: 'Bac Bo'. */
+  catalogadorGame: string
+  /** Nomes alternativos tentados quando o principal nao responde. */
+  catalogadorFallbackGames: string[]
+  /** WebSocket que emite os sinais. Vazio usa o padrao do app. */
+  signalUrl: string
+  /** Colecao de sinais. Ex.: 'bac_bo_english'. */
+  signalCollection: string
+  /** Nome da configuracao de sinal. Ex.: 'bac-bo-ao-vivo-hypeg1'. */
+  signalName: string
 }
 
 export interface ManagedBanner {
@@ -212,15 +232,16 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     ctaUrl: null
   },
   games: [
-    { gameId: 'football-studio', title: 'FOOTBALL STUDIO', description: 'Evolution', imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'prime', order: 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'bac-bo-en', title: 'BAC BO EN', description: null, imageUrl: '/games/bac-bo-en.png', route: '/jogo/bac-bo-en', tabKey: 'premium', order: 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'bac-bo-brasileiro', title: 'BAC BO BRASILEIRO', description: null, imageUrl: '/games/bac-bo-ao-vivo.png', route: '/jogo/bac-bo-brasileiro', tabKey: 'premium', order: 2, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'football-studio-ao-vivo', title: 'FUTEBOL STUDIO AO VIVO', description: null, imageUrl: '/games/football-studio-br.png', route: '/jogo/football-studio-ao-vivo', tabKey: 'premium', order: 3, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'football-studio-premium', title: 'FOOTBALL STUDIO', description: null, imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'premium', order: 4, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'baccarat', title: 'BACCARAT', description: null, imageUrl: '/games/baccarat.png', route: '/jogo/baccarat', tabKey: 'premium', order: 5, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'dragon-tiger', title: 'DRAGON TIGER', description: null, imageUrl: '/games/dragon-tiger.png', route: '/jogo/dragon-tiger', tabKey: 'premium', order: 6, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'aviator', title: 'AVIATOR', description: null, imageUrl: '/games/aviator.png', route: '/jogo/aviator', tabKey: 'premium', order: 7, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
-    { gameId: 'football-studio-sem-gale', title: 'FOOTBALL STUDIO ENGLISH', description: null, imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'claude', order: 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} }
+    { gameId: 'football-studio', title: 'FOOTBALL STUDIO', description: 'Evolution', imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'prime', order: 1, status: 'enabled', requiresLogin: true, startGameSlug: 'evolution/football-studio', catalogadorCollection: 'evolution', catalogadorGame: 'Football Studio English', catalogadorFallbackGames: [], signalUrl: '', signalCollection: 'football_studio_english', signalName: 'football-studio-eng-default', signalBalanceGate: {} },
+    { gameId: 'bac-bo-en', title: 'BAC BO EN', description: null, imageUrl: '/games/bac-bo-en.png', route: '/jogo/bac-bo-en', tabKey: 'premium', order: 1, status: 'enabled', requiresLogin: true, startGameSlug: 'evolution/bac-bo', catalogadorCollection: 'evolution', catalogadorGame: 'Bac Bo English', catalogadorFallbackGames: [], signalUrl: '', signalCollection: 'bac_bo_english', signalName: 'bac-bo-hypeg2', signalBalanceGate: {} },
+    { gameId: 'bac-bo-brasileiro', title: 'BAC BO BRASILEIRO', description: null, imageUrl: '/games/bac-bo-ao-vivo.png', route: '/jogo/bac-bo-brasileiro', tabKey: 'premium', order: 2, status: 'enabled', requiresLogin: true, startGameSlug: '', catalogadorCollection: 'evolution', catalogadorGame: 'Bac Bo Brasileiro', catalogadorFallbackGames: ['Bac Bo English'], signalUrl: '', signalCollection: 'bac_bo_ao_vivo', signalName: 'bac-bo-ao-vivo-hypeg1', signalBalanceGate: {} },
+    { gameId: 'football-studio-ao-vivo', title: 'FUTEBOL STUDIO AO VIVO', description: null, imageUrl: '/games/football-studio-br.png', route: '/jogo/football-studio-ao-vivo', tabKey: 'premium', order: 3, status: 'enabled', requiresLogin: true, startGameSlug: 'evolution/futebol-studio-ao-vivo', catalogadorCollection: 'evolution', catalogadorGame: 'Futebol Studio Ao Vivo', catalogadorFallbackGames: [], signalUrl: '', signalCollection: 'futebol_studio_ao_vivo', signalName: 'football-studio-ao-vivo-default', signalBalanceGate: {} },
+    { gameId: 'football-studio-premium', title: 'FOOTBALL STUDIO', description: null, imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'premium', order: 4, status: 'enabled', requiresLogin: true, startGameSlug: '', catalogadorCollection: '', catalogadorGame: '', catalogadorFallbackGames: [], signalUrl: '', signalCollection: '', signalName: '', signalBalanceGate: {} },
+    { gameId: 'baccarat', title: 'BACCARAT', description: null, imageUrl: '/games/baccarat.png', route: '/jogo/baccarat', tabKey: 'premium', order: 5, status: 'enabled', requiresLogin: true, startGameSlug: 'evolution/bacara-rapido', catalogadorCollection: 'evolution', catalogadorGame: 'Speed Baccarat A', catalogadorFallbackGames: ['Baccarat', 'Speed Baccarat', 'Baccarat A'], signalUrl: '', signalCollection: 'baccarat', signalName: 'speed-baccarat-a-hypeg1', signalBalanceGate: {} },
+    { gameId: 'dragon-tiger', title: 'DRAGON TIGER', description: null, imageUrl: '/games/dragon-tiger.png', route: '/jogo/dragon-tiger', tabKey: 'premium', order: 6, status: 'enabled', requiresLogin: true, startGameSlug: 'evolution/dragon-tiger', catalogadorCollection: 'evolution', catalogadorGame: 'Dragon Tiger', catalogadorFallbackGames: [], signalUrl: '', signalCollection: 'dragon_tiger_evolution', signalName: 'dragon-tiger-evo-hypeg1', signalBalanceGate: {} },
+    { gameId: 'aviator', title: 'AVIATOR', description: null, imageUrl: '/games/aviator.png', route: '/jogo/aviator', tabKey: 'premium', order: 7, status: 'enabled', requiresLogin: true, startGameSlug: 'spribe/aviator', catalogadorCollection: 'spribe', catalogadorGame: 'aviatorlotogreen', catalogadorFallbackGames: [], signalUrl: '', signalCollection: 'aviator_spribe', signalName: 'aviator-spribe-hypeg1', signalBalanceGate: {} },
+    { gameId: 'football-studio-sem-gale', title: 'FOOTBALL STUDIO ENGLISH', description: null, imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'claude', order: 1, status: 'enabled', requiresLogin: true, startGameSlug: '', catalogadorCollection: '', catalogadorGame: '', catalogadorFallbackGames: [], signalUrl: '', signalCollection: '', signalName: '', signalBalanceGate: {} },
+    { gameId: 'futebol-brasileiro', title: 'FUTEBOL BRASILEIRO', description: 'GoodGame', imageUrl: null, route: '/jogo/futebol-brasileiro', tabKey: 'premium', order: 8, status: 'enabled', requiresLogin: true, startGameSlug: 'goodgame/futebol-brasileiro', catalogadorCollection: '', catalogadorGame: '', catalogadorFallbackGames: [], signalUrl: 'wss://ws-signals.grupoautoma.com/ws', signalCollection: 'futebol_brasileiro_sports_club', signalName: 'goodgame-futebol-brasileiro', signalBalanceGate: {} },
   ],
   banners: []
 }

@@ -158,6 +158,19 @@
                 <label class="field"><span>Saldo mínimo do jogo</span><input v-model.number="game.signalBalanceGate.minimumBalance" type="number" min="0" step="0.01" /></label>
               </div>
               <AdminMediaField v-model="game.imageUrl" label="Imagem do card" />
+              <details class="tech-block">
+                <summary>Configuração técnica</summary>
+                <p class="tech-hint">Campo vazio usa o valor padrão do código (<code>constants/gameRoutes.ts</code>). Preencha para sobrescrever sem deploy.</p>
+                <div class="form-grid">
+                  <label class="field"><span>Slug para abrir o jogo</span><input v-model="game.startGameSlug" placeholder="evolution/bac-bo-ao-vivo" /></label>
+                  <label class="field"><span>Catalogador — coleção</span><input v-model="game.catalogadorCollection" placeholder="evolution" /></label>
+                  <label class="field"><span>Catalogador — jogo</span><input v-model="game.catalogadorGame" placeholder="Bac Bo" /></label>
+                  <label class="field"><span>Catalogador — alternativas</span><input :value="(game.catalogadorFallbackGames || []).join(', ')" placeholder="Bac Bo English, Bac Bo A" @input="setFallbackGames(game, ($event.target as HTMLInputElement).value)" /></label>
+                  <label class="field"><span>WebSocket de sinais</span><input v-model="game.signalUrl" placeholder="wss://ws-signals.grupoautoma.com/ws" /></label>
+                  <label class="field"><span>Sinal — coleção</span><input v-model="game.signalCollection" placeholder="bac_bo_english" /></label>
+                  <label class="field"><span>Sinal — nome</span><input v-model="game.signalName" placeholder="bac-bo-ao-vivo-hypeg1" /></label>
+                </div>
+              </details>
               <button type="button" class="icon-btn" title="Remover" @click="draft.games.splice(index, 1)"><Icon name="ph:trash-bold" /></button>
             </div>
           </div>
@@ -393,7 +406,12 @@ const cleanupMedia = async () => {
 }
 
 const addMenuItem = () => draft.menu.push({ key: '', label: '', icon: '', order: draft.menu.length + 1 })
-const addGame = () => draft.games.push({ gameId: '', title: '', description: null, imageUrl: null, route: '', tabKey: 'prime', order: draft.games.length + 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} })
+const addGame = () => draft.games.push({ gameId: '', title: '', description: null, imageUrl: null, route: '', tabKey: 'prime', order: draft.games.length + 1, status: 'enabled', requiresLogin: true, startGameSlug: '', catalogadorCollection: '', catalogadorGame: '', catalogadorFallbackGames: [], signalUrl: '', signalCollection: '', signalName: '', signalBalanceGate: {} })
+
+// A lista de alternativas e digitada separada por virgula, mas persiste como array.
+const setFallbackGames = (game: any, value: string) => {
+  game.catalogadorFallbackGames = value.split(',').map(part => part.trim()).filter(Boolean)
+}
 const rankingBanners = computed(() => draft.banners.filter(banner => banner.placement === 'ranking'))
 const addRankingBanner = () => draft.banners.push({ id: `ranking-${Date.now()}`, placement: 'ranking', desktopImageUrl: '', mobileImageUrl: null, altText: '', targetUrl: null, openInNewTab: false, enabled: false, order: rankingBanners.value.length + 1, startsAt: null, endsAt: null })
 const removeBanner = (id: string) => { const index = draft.banners.findIndex(banner => banner.id === id); if (index >= 0) draft.banners.splice(index, 1) }
@@ -448,6 +466,9 @@ input:focus, textarea:focus { border-color: #8b7cf6; box-shadow: 0 0 0 3px rgba(
 .toggle input { width: 18px; height: 18px; accent-color: #8b7cf6; }
 .toggle.danger { width: max-content; margin-bottom: 18px; border-color: #69313b; }
 .menu-list { display: grid; gap: 10px; }
+.tech-block { margin-top: 12px; padding: 12px; border: 1px solid var(--adm-border, #292d45); border-radius: 10px; }
+.tech-block summary { cursor: pointer; font-weight: 700; }
+.tech-hint { margin: 8px 0 12px; font-size: 12px; opacity: .75; }
 .menu-row { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 90px 42px; gap: 8px; }
 .primary-btn, .ghost-btn, .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 9px; cursor: pointer; font-weight: 800; }
 .primary-btn { padding: 12px 18px; border: 0; color: #fff; background: linear-gradient(135deg, #8b7cf6, #6657d8); }

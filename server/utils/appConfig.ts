@@ -13,6 +13,12 @@ const nullableAsset = (value: unknown, fallback: string | null) => {
   return result
 }
 
+const wsUrl = (value: unknown) => {
+  const raw = typeof value === 'string' ? value.trim().slice(0, 300) : ''
+  if (!raw) return ''
+  return /^wss?:\/\//i.test(raw) ? raw : ''
+}
+
 const url = (value: unknown, fallback: string) => {
   if (value === '') return ''
   const result = nullableAsset(value, fallback)
@@ -113,6 +119,15 @@ export const normalizeAppConfig = (input: unknown): AppConfig => {
     order: number(game?.order, index + 1, 0, 999),
     status: statuses.has(game?.status) ? game.status : 'enabled',
     requiresLogin: bool(game?.requiresLogin, true),
+    startGameSlug: text(game?.startGameSlug, '', 200),
+    catalogadorCollection: text(game?.catalogadorCollection, '', 120),
+    catalogadorGame: text(game?.catalogadorGame, '', 200),
+    catalogadorFallbackGames: Array.isArray(game?.catalogadorFallbackGames)
+      ? game.catalogadorFallbackGames.slice(0, 10).map((name: any) => text(name, '', 200)).filter(Boolean)
+      : [],
+    signalUrl: wsUrl(game?.signalUrl),
+    signalCollection: text(game?.signalCollection, '', 120),
+    signalName: text(game?.signalName, '', 200),
     signalBalanceGate: {
       enabled: typeof game?.signalBalanceGate?.enabled === 'boolean' ? game.signalBalanceGate.enabled : undefined,
       minimumBalance: game?.signalBalanceGate?.minimumBalance == null ? undefined : number(game.signalBalanceGate.minimumBalance, config.signalBalanceGate.minimumBalance),
