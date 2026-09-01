@@ -280,15 +280,16 @@
                 <div class="adm-table-wrap adm-scroll">
                     <table class="adm-table">
                         <thead>
-                            <tr><th>E-mail</th><th>Valor</th><th>Marca</th><th>FTD</th><th>Status</th><th>Data</th></tr>
+                            <tr><th>E-mail</th><th>Valor</th><th>Transação</th><th>Marca</th><th>FTD</th><th>Status</th><th>Data</th></tr>
                         </thead>
                         <tbody>
                             <tr v-if="!deposits.length">
-                                <td colspan="6" class="adm-td-empty">Nenhum depósito registrado.</td>
+                                <td colspan="7" class="adm-td-empty">Nenhum depósito registrado.</td>
                             </tr>
                             <tr v-for="(d, i) in deposits" :key="i">
                                 <td>{{ d.email }}</td>
                                 <td>{{ fmtMoney(d.amount) }}</td>
+                                <td>{{ d.transaction_id || "—" }}</td>
                                 <td>{{ d.brand_slug || "—" }}</td>
                                 <td>{{ d.is_ftd ? "Sim" : "—" }}</td>
                                 <td>{{ d.status || "—" }}</td>
@@ -425,7 +426,7 @@ const riskChips = [
 ];
 
 // --- Depósitos ---
-const deposits = ref<Array<{ email: string; amount: number; brand_slug: string | null; is_ftd: boolean; status: string | null; created_at: string | null }>>([]);
+const deposits = ref<Array<{ email: string; amount: number; transaction_id: string | null; brand_slug: string | null; is_ftd: boolean; status: string | null; created_at: string | null }>>([]);
 
 // --- Atividade ---
 const activityDays = ref<Array<{ date: string; users: number; deposits: number }>>([]);

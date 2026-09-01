@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
       email: d.email,
       brand_slug: d.brand_slug ?? null,
       amount: d.amount ?? 0,
+      transaction_id: d.transaction_id ?? null,
       status: d.status ?? null,
       is_ftd: !!d.is_ftd,
       created_at: d.created_at ?? null
