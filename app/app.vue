@@ -13,7 +13,7 @@
 
     <div v-else id="app">
         <PageLoader />
-        <NuxtPage />
+        <NuxtLayout><NuxtPage /></NuxtLayout>
         <UpdateNotification />
         <KycModal :show="showKycModal" @dismiss="kycDismissed = true" />
         <BlockedOverlay v-if="isBlocked" />
