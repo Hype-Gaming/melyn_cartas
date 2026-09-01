@@ -10,6 +10,7 @@ import { BRANDS, DEFAULT_BRAND, getBrand } from '../../shared/brands'
 export interface Wallet {
   id: number
   balance: number
+  profileLoading: boolean
   credit: number
   available_value: number
   user_id: number
@@ -70,6 +71,7 @@ const authState = reactive<AuthState>({
   cookieKey: null,
   isAuthenticated: false,
   balance: 0,
+  profileLoading: false,
   needsKyc: false,
   kycChecked: false,
   brandSlug: DEFAULT_BRAND.slug,
@@ -93,6 +95,7 @@ export const useAuth = () => {
           authState.token = parsed.token
           authState.cookieKey = parsed.cookieKey
           authState.isAuthenticated = !!parsed.token
+          authState.profileLoading = !!parsed.token
           authState.balance = parsed.balance || 0
           // Restaura a marca da sessão (sessões antigas caem no padrão)
           const brand = getBrand(parsed.brandSlug)
@@ -128,6 +131,7 @@ export const useAuth = () => {
     authState.cookieKey = null
     authState.isAuthenticated = false
     authState.balance = 0
+    authState.profileLoading = false
     authState.needsKyc = false
     authState.kycChecked = false
     authState.brandSlug = DEFAULT_BRAND.slug
@@ -148,6 +152,7 @@ export const useAuth = () => {
   const fetchUserProfile = async (): Promise<void> => {
     if (!authState.token || !authState.cookieKey) return
 
+    authState.profileLoading = true
     try {
       const response = await $fetch<UserProfileResponse>(`${authState.apiBaseUrl}/api/auth/user`, {
         method: 'GET',
@@ -196,6 +201,8 @@ export const useAuth = () => {
         return
       }
       console.error('Erro ao buscar perfil do usuário:', err)
+    } finally {
+      authState.profileLoading = false
     }
   }
 
@@ -371,6 +378,7 @@ export const useAuth = () => {
     cookieKey: computed(() => authState.cookieKey),
     isAuthenticated: computed(() => authState.isAuthenticated),
     balance: computed(() => authState.balance),
+    profileLoading: computed(() => authState.profileLoading),
     needsKyc: computed(() => authState.needsKyc),
     kycChecked: computed(() => authState.kycChecked),
     // Marca (brand) ativa do usuário logado

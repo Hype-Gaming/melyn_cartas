@@ -18,6 +18,7 @@
 const props = defineProps<{ allowed: boolean }>()
 const { config: appConfig } = useVisualConfig()
 const { isAuthenticated } = useAuth()
+const { requestPermission } = useNotificationPermission()
 const visible = ref(false)
 const config = computed(() => appConfig.value.notificationPrompt)
 const storageKey = 'mr_cartas_notification_prompt_after'
@@ -37,7 +38,7 @@ const evaluate = () => {
 
 const activate = async () => {
   visible.value = false
-  try { await Notification.requestPermission() } catch { /* browser declined */ }
+  await requestPermission()
 }
 
 const later = () => {

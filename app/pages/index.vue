@@ -1,67 +1,9 @@
 <template>
     <div class="dashboard">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <NuxtLink to="/">
-                    <AppLogo class="header-logo" />
-                </NuxtLink>
-            </div>
-            <div class="header-right">
-                <div class="balance">
-                    <Icon name="ph:wallet-bold" class="balance-icon" />
-                    <span class="balance-value">{{ formattedBalance }}</span>
-                    <Icon
-                        name="ph:info"
-                        class="balance-info"
-                        @click="handleDepositClick"
-                    />
-                </div>
-                <button class="btn-deposit" @click="handleDepositClick">
-                    {{ appConfig.content.depositButton }}
-                </button>
-                <div class="profile-wrapper">
-                    <div class="profile-icon" @click="toggleProfileDropdown">
-                        <Icon name="ph:user-bold" />
-                    </div>
-                    <div class="profile-dropdown" v-if="showProfileDropdown">
-                        <div class="dropdown-user" v-if="user">
-                            <span class="user-name">{{
-                                user?.name || "Usuário"
-                            }}</span>
-                            <span class="user-email">{{
-                                user?.email || ""
-                            }}</span>
-                        </div>
-                        <NuxtLink to="/gestao" class="dropdown-item" @click="guardRoute">
-                            <Icon name="ph:calculator-bold" />
-                            Gestão
-                        </NuxtLink>
-                        <NuxtLink to="/aulas" class="dropdown-item" @click="guardRoute">
-                            <Icon name="ph:graduation-cap-bold" />
-                            Aulas
-                        </NuxtLink>
-                        <button
-                            v-if="isAuthenticated"
-                            @click="handleLogout"
-                            class="dropdown-item logout"
-                        >
-                            <Icon name="ph:sign-out-bold" />
-                            <span>Sair</span>
-                        </button>
-                        <button v-else class="dropdown-item" @click="redirectToLogin()">
-                            <Icon name="ph:sign-in-bold" />
-                            <span>Entrar</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
         <!-- Main Content -->
         <div class="main-content">
             <!-- Sidebar -->
-            <aside class="sidebar">
+            <aside class="home-aside">
                 <button v-if="!isPaid" class="btn-confirmar-compra" @click="handleSubscriptionClick">
                     <Icon name="ph:lock-open-bold" />
                     {{ appConfig.content.subscribeButton }}
@@ -134,7 +76,7 @@
                 </div>
 
                 <!-- IA Prime -->
-                <div class="games-section">
+                <div id="jogos" class="games-section">
                     <div class="games-header">
                         <h2 class="games-title">
                             <Icon
@@ -272,15 +214,6 @@
                 </div>
 
                 <!-- Links Úteis -->
-                <section v-if="appConfig.features.ranking" class="ranking-section">
-                    <h2 class="section-title">Ranking</h2>
-                    <div v-if="rankingBanners.length" class="ranking-banners">
-                        <a v-for="banner in rankingBanners" :key="banner.id" :href="banner.targetUrl || undefined" :target="banner.openInNewTab ? '_blank' : '_self'" :rel="banner.openInNewTab ? 'noopener noreferrer' : undefined">
-                            <picture><source v-if="banner.mobileImageUrl" media="(max-width: 640px)" :srcset="resolveAssetUrl(banner.mobileImageUrl)" /><img :src="resolveAssetUrl(banner.desktopImageUrl)" :alt="banner.altText" /></picture>
-                        </a>
-                    </div>
-                </section>
-
                 <div class="links-section">
                     <h2 class="section-title">{{ appConfig.content.linksTitle }}</h2>
                     <div class="links-grid">
@@ -335,7 +268,7 @@
         </div>
 
         <!-- Deposit Modal -->
-        <DepositModal />
+        <!-- DepositModal lives in the default layout so every page can open it. -->
 
         <!-- Subscription Modal -->
         <!-- Pop-up de desbloqueio de assinatura desativado a pedido (será removido).
@@ -615,11 +548,6 @@ const premiumGames = computed(() => managedGames('premium'));
 
 const claudeGames = computed(() => managedGames('claude').map(game => ({ ...game, checkoutUrl: appConfig.value.links.checkoutSemGale || CHECKOUT_URLS.legacySemGale })));
 
-const rankingBanners = computed(() => {
-    const now = Date.now();
-    return appConfig.value.banners.filter(banner => banner.placement === 'ranking' && banner.enabled && (!banner.startsAt || Date.parse(banner.startsAt) <= now) && (!banner.endsAt || Date.parse(banner.endsAt) >= now)).sort((a, b) => a.order - b.order);
-});
-
 const showGrupoModal = ref(false);
 const openGrupoModal = () => {
     showGrupoModal.value = true;
@@ -885,10 +813,12 @@ const highlights = ref([
 }
 
 /* Sidebar */
-.sidebar {
+.home-aside {
     width: 280px;
     flex-shrink: 0;
+    order: 2;
 }
+.center-content { order: 1; }
 
 .btn-confirmar-compra {
     display: flex;
@@ -1462,12 +1392,12 @@ const highlights = ref([
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .main-content {
         flex-direction: column;
     }
 
-    .sidebar {
+    .home-aside {
         width: 100%;
         order: 2;
     }
@@ -1616,9 +1546,5 @@ const highlights = ref([
     display: block;
     border-radius: 16px;
 }
-.ranking-section { margin: 32px 0; }
-.ranking-banners { display: grid; gap: 16px; }
-.ranking-banners a, .ranking-banners picture { display: block; width: 100%; }
-.ranking-banners img { display: block; width: 100%; height: auto; border-radius: 14px; object-fit: cover; }
 .is-managed-locked { cursor: not-allowed; }
 </style>
