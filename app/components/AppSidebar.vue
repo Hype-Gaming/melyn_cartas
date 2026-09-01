@@ -14,12 +14,12 @@
         <div class="balance-main">
           <span class="coin-wrapper" aria-hidden="true"><Icon name="ph:coin-fill" /></span>
           <div class="balance-info">
-            <span class="balance-label">Saldo disponível</span>
+            <span class="balance-label">Seu saldo</span>
             <div v-if="profileLoading" class="balance-skeleton" aria-label="Carregando saldo" />
             <strong v-else>{{ formattedBalance }}</strong>
           </div>
         </div>
-        <button type="button" @click="openModal"><Icon name="ph:pix-logo-bold" /> Depositar PIX</button>
+        <button type="button" @click="openModal"><span>Depositar</span><span class="pix-badge">PIX</span></button>
       </section>
     </template>
     <NuxtLink v-else to="/auth/login" class="login-cta"><Icon name="ph:sign-in-bold" /> Entrar na conta</NuxtLink>
@@ -60,13 +60,14 @@ const refreshBalance = () => fetchUserProfile()
 .user-card button { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 9px; background: var(--component-bg); color: var(--text-main); cursor: pointer; }
 .balance-card { display: grid; gap: 16px; margin-top: 12px; padding: 16px; border: 1px solid color-mix(in srgb, var(--text-main) 5%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--text-main) 3%, transparent); }
 .balance-main { display: flex; align-items: center; gap: 12px; }
-.coin-wrapper { display: grid; place-items: center; padding: 8px; border-radius: 12px; background: rgba(0, 0, 0, .4); color: var(--color-gold); font-size: 24px; }
+.coin-wrapper { display: grid; place-items: center; padding: 8px; border-radius: 12px; background: rgba(0, 0, 0, .4); color: var(--text-main); font-size: 24px; }
 .balance-info { display: flex; flex-direction: column; min-width: 0; }
 .balance-label { color: var(--text-muted); font-size: .7rem; font-weight: 600; text-transform: uppercase; }
-.balance-info strong { font-size: 1.1rem; font-weight: 800; }
+.balance-info strong { font-size: 1.45rem; font-weight: 800; line-height: 1.15; }
+.pix-badge { padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--text-main) 20%, transparent); font-size: .6rem; font-weight: 800; letter-spacing: .04em; }
 .balance-card button, .login-cta { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: .8rem; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); color: var(--text-main); font-weight: 700; cursor: pointer; text-decoration: none; }
 .balance-card button:hover, .login-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary) 30%, transparent); }
-.balance-skeleton { width: 80px; height: 1.1rem; border-radius: 6px; background: color-mix(in srgb, var(--text-main) 10%, transparent); animation: pulse 1.2s ease-in-out infinite; }
+.balance-skeleton { width: 96px; height: 1.45rem; border-radius: 6px; background: color-mix(in srgb, var(--text-main) 10%, transparent); animation: pulse 1.2s ease-in-out infinite; }
 .login-cta { margin-bottom: 12px; }
 .nav-section { margin-top: 24px; }
 .nav-label { display: block; margin: 0 12px 10px; color: var(--text-muted); font-size: 10px; font-weight: 800; letter-spacing: .14em; }

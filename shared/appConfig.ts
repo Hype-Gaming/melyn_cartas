@@ -85,6 +85,7 @@ export interface AppConfig {
     whatsappSupport: string
     whatsappCommunity: string
     telegram: string
+    telegramSupport: string
     instagram: string
     site: string
   }
@@ -172,6 +173,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     whatsappSupport: '',
     whatsappCommunity: '',
     telegram: '',
+    telegramSupport: '',
     instagram: '',
     site: ''
   },
@@ -185,7 +187,8 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     { key: 'lessons', label: 'Aulas', icon: 'ph:graduation-cap-bold', order: 3 },
     { key: 'management', label: 'Gestão de Banca', icon: 'ph:wallet-bold', order: 4 },
     { key: 'ranking', label: 'Ranking', icon: 'ph:trophy-bold', order: 5 },
-    { key: 'profile', label: 'Perfil', icon: 'ph:user-circle-bold', order: 6 }
+    { key: 'profile', label: 'Perfil', icon: 'ph:user-circle-bold', order: 6 },
+    { key: 'links', label: 'Links', icon: 'ph:link-bold', order: 7 }
   ],
   maintenance: {
     active: false,

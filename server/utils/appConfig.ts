@@ -72,7 +72,7 @@ export const normalizeAppConfig = (input: unknown): AppConfig => {
       icon: text(item?.icon, '', 100),
       order: Number.isFinite(Number(item?.order)) ? Math.max(0, Math.min(999, Number(item.order))) : index + 1
     })).filter(item => item.key && item.label)
-    for (const required of defaults.menu.filter(item => item.key === 'ranking' || item.key === 'profile')) {
+    for (const required of defaults.menu.filter(item => item.key === 'ranking' || item.key === 'profile' || item.key === 'links')) {
       if (!config.menu.some(item => item.key === required.key)) config.menu.push(required)
     }
   }
