@@ -8,6 +8,44 @@ export const THEME_KEYS = [
 
 export type ThemeKey = typeof THEME_KEYS[number]
 
+export type ManagedGameStatus = 'enabled' | 'blocked' | 'hidden' | 'maintenance'
+
+export interface SignalBalanceGate {
+  enabled: boolean
+  minimumBalance: number
+  title: string
+  message: string
+  ctaLabel: string
+  ctaUrl: string | null
+}
+
+export interface ManagedGame {
+  gameId: string
+  title: string
+  description: string | null
+  imageUrl: string | null
+  route: string
+  tabKey: 'prime' | 'premium' | 'claude'
+  order: number
+  status: ManagedGameStatus
+  requiresLogin: boolean
+  signalBalanceGate: Partial<SignalBalanceGate>
+}
+
+export interface ManagedBanner {
+  id: string
+  placement: 'home' | 'ranking'
+  desktopImageUrl: string
+  mobileImageUrl: string | null
+  altText: string
+  targetUrl: string | null
+  openInNewTab: boolean
+  enabled: boolean
+  order: number
+  startsAt: string | null
+  endsAt: string | null
+}
+
 export interface AppConfig {
   appId: typeof APP_ID
   brand: {
@@ -62,6 +100,17 @@ export interface AppConfig {
   }
   menu: Array<{ key: string; label: string; icon: string; order: number }>
   maintenance: { active: boolean; title: string; message: string }
+  notificationPrompt: {
+    enabled: boolean
+    title: string
+    message: string
+    activateLabel: string
+    laterLabel: string
+    retryDays: number
+  }
+  signalBalanceGate: SignalBalanceGate
+  games: ManagedGame[]
+  banners: ManagedBanner[]
   updatedAt?: string | Date
 }
 
@@ -139,7 +188,35 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     active: false,
     title: 'Em manutenção',
     message: 'Estamos realizando melhorias. Voltamos em breve.'
-  }
+  },
+  notificationPrompt: {
+    enabled: true,
+    title: 'Ative as notificações',
+    message: 'Receba avisos sobre novos sinais e novidades da MR Cartas.',
+    activateLabel: 'Ativar notificações',
+    laterLabel: 'Agora não',
+    retryDays: 7
+  },
+  signalBalanceGate: {
+    enabled: true,
+    minimumBalance: 10,
+    title: 'Sinais bloqueados',
+    message: 'Adicione pelo menos R$ 10,00 de saldo para liberar os sinais.',
+    ctaLabel: 'Depositar agora',
+    ctaUrl: null
+  },
+  games: [
+    { gameId: 'football-studio', title: 'FOOTBALL STUDIO', description: 'Evolution', imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'prime', order: 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'bac-bo-en', title: 'BAC BO EN', description: null, imageUrl: '/games/bac-bo-en.png', route: '/jogo/bac-bo-en', tabKey: 'premium', order: 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'bac-bo-brasileiro', title: 'BAC BO BRASILEIRO', description: null, imageUrl: '/games/bac-bo-ao-vivo.png', route: '/jogo/bac-bo-brasileiro', tabKey: 'premium', order: 2, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'football-studio-ao-vivo', title: 'FUTEBOL STUDIO AO VIVO', description: null, imageUrl: '/games/football-studio-br.png', route: '/jogo/football-studio-ao-vivo', tabKey: 'premium', order: 3, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'football-studio-premium', title: 'FOOTBALL STUDIO', description: null, imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'premium', order: 4, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'baccarat', title: 'BACCARAT', description: null, imageUrl: '/games/baccarat.png', route: '/jogo/baccarat', tabKey: 'premium', order: 5, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'dragon-tiger', title: 'DRAGON TIGER', description: null, imageUrl: '/games/dragon-tiger.png', route: '/jogo/dragon-tiger', tabKey: 'premium', order: 6, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'aviator', title: 'AVIATOR', description: null, imageUrl: '/games/aviator.png', route: '/jogo/aviator', tabKey: 'premium', order: 7, status: 'enabled', requiresLogin: true, signalBalanceGate: {} },
+    { gameId: 'football-studio-sem-gale', title: 'FOOTBALL STUDIO ENGLISH', description: null, imageUrl: '/games/football-studio.png', route: '/jogo/football-studio', tabKey: 'claude', order: 1, status: 'enabled', requiresLogin: true, signalBalanceGate: {} }
+  ],
+  banners: []
 }
 
 export const cloneDefaultAppConfig = (): AppConfig =>
