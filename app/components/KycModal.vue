@@ -36,7 +36,7 @@
         </div>
         
         <a
-          :href="affiliateUrl"
+          :href="registerUrl"
           target="_blank"
           rel="noopener noreferrer"
           class="kyc-button"
@@ -73,6 +73,10 @@ const emit = defineEmits<{
 }>()
 
 const { brandName, affiliateUrl } = useAuth()
+
+// Mesmo link de cadastro do login: /admin/visual (aba Links) manda,
+// a URL de afiliado da marca é fallback.
+const registerUrl = computed(() => appConfig.value.links.register || affiliateUrl.value)
 
 </script>
 

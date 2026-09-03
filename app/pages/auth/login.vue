@@ -86,7 +86,7 @@
                     <a
                         v-for="brand in brands"
                         :key="brand.slug"
-                        :href="brand.affiliateUrl"
+                        :href="registerUrl(brand)"
                         target="_blank"
                         class="create-link"
                     >
@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { BRANDS } from "../../../shared/brands";
+import { BRANDS, type BrandConfig } from "../../../shared/brands";
 
 definePageMeta({
     layout: "bare",
@@ -116,6 +116,12 @@ const route = useRoute();
 const router = useRouter();
 
 const { login, loading, error, isAuthenticated } = useAuth();
+const { config: appConfig } = useVisualConfig();
+
+// O link de cadastro é o configurado em /admin/visual (aba Links).
+// A URL de afiliado da marca fica só como fallback quando o campo está vazio.
+const registerUrl = (brand: BrandConfig) =>
+    appConfig.value.links.register || brand.affiliateUrl;
 
 const errorMessage = ref("");
 const showPassword = ref(false);
