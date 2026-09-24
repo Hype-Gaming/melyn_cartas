@@ -13,6 +13,7 @@ const items = [
   { to: '/admin/usuarios', label: 'Usuários', icon: 'ph:users-bold' },
   { to: '/admin/depositos', label: 'Depósitos', icon: 'ph:hand-coins-bold' },
   { to: '/admin/visual', label: 'Visual do app', icon: 'ph:palette-bold' },
+  { to: '/admin/manutencao', label: 'Manutenção', icon: 'ph:wrench-bold' },
   { to: '/admin/webhook', label: 'Liberar acesso', icon: 'ph:plug-bold' }
 ]
 </script>

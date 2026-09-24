@@ -1,15 +1,16 @@
 <template>
-    <div v-if="!visualReady" class="visual-bootstrap" role="status" aria-label="Carregando aparência">
+    <div v-if="!appReady" class="visual-bootstrap" role="status" aria-label="Verificando disponibilidade">
         <div class="visual-bootstrap-spinner"></div>
     </div>
 
-    <div v-else-if="showMaintenance" class="maintenance-screen">
-        <div class="maintenance-card">
-            <AppLogo class="maintenance-logo" />
-            <h1>{{ appConfig.maintenance.title }}</h1>
-            <p>{{ appConfig.maintenance.message }}</p>
-        </div>
-    </div>
+    <MaintenanceScreen
+        v-else-if="showMaintenance"
+        :title="maintenanceStatus.title"
+        :message="maintenanceStatus.message"
+        :checking="maintenanceChecking"
+        :error="maintenanceError"
+        @retry="checkMaintenance"
+    />
 
     <div v-else id="app">
         <PageLoader />
@@ -28,11 +29,20 @@ const { send: sendHeartbeat } = useHeartbeat();
 const { isBlocked } = useAccountBlocked();
 const route = useRoute();
 const { config: appConfig, ready: visualReady, loadAppConfig, resolveAssetUrl } = useVisualConfig();
+const {
+    status: maintenanceStatus,
+    checked: maintenanceChecked,
+    checking: maintenanceChecking,
+    error: maintenanceError,
+    check: checkMaintenance,
+} = useMaintenanceStatus();
 const kycDismissed = ref(false);
+let maintenanceTimer: ReturnType<typeof setInterval> | undefined;
 
 const showMaintenance = computed(() =>
-    appConfig.value.maintenance.active && !route.path.startsWith("/admin"),
+    maintenanceStatus.value.active && !route.path.startsWith("/admin"),
 );
+const appReady = computed(() => visualReady.value && maintenanceChecked.value);
 
 // Mostrar modal de KYC quando necessário (apenas em rotas autenticadas e após verificação)
 const showKycModal = computed(() => {
@@ -50,17 +60,23 @@ const showKycModal = computed(() => {
 
 // Verificar KYC ao carregar a página
 onMounted(async () => {
-    await loadAppConfig();
+    await Promise.all([loadAppConfig(), checkMaintenance()]);
     if (isAuthenticated.value) {
         await fetchUserProfile();
         sendHeartbeat();
     }
+    maintenanceTimer = setInterval(checkMaintenance, 60_000);
+});
+
+onBeforeUnmount(() => {
+    if (maintenanceTimer) clearInterval(maintenanceTimer);
 });
 
 // Observar mudanças na rota para verificar KYC
 watch(
     () => route.path,
     async () => {
+        await checkMaintenance();
         kycDismissed.value = false;
         if (isAuthenticated.value && !route.path.startsWith("/auth")) {
             await fetchUserProfile();
@@ -154,27 +170,4 @@ body {
     to { transform: rotate(360deg); }
 }
 
-.maintenance-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: var(--bg-darker);
-    color: var(--text-main);
-}
-
-.maintenance-card {
-    width: min(520px, 100%);
-    padding: 40px;
-    text-align: center;
-    border: 1px solid var(--card-border);
-    border-radius: 20px;
-    background: var(--card-bg);
-}
-
-.maintenance-logo { max-width: 180px; max-height: 90px; margin-bottom: 24px; object-fit: contain; }
-.maintenance-card h1 { margin-bottom: 12px; color: var(--color-primary); }
-.maintenance-card p { color: var(--text-muted); line-height: 1.6; }
 </style>

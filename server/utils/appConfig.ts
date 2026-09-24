@@ -85,8 +85,8 @@ export const normalizeAppConfig = (input: unknown): AppConfig => {
 
   config.maintenance.active = typeof source.maintenance?.active === 'boolean'
     ? source.maintenance.active : defaults.maintenance.active
-  config.maintenance.title = text(source.maintenance?.title, defaults.maintenance.title, 120)
-  config.maintenance.message = text(source.maintenance?.message, defaults.maintenance.message, 500)
+  config.maintenance.title = text(source.maintenance?.title, defaults.maintenance.title, 120) || defaults.maintenance.title
+  config.maintenance.message = text(source.maintenance?.message, defaults.maintenance.message, 500) || defaults.maintenance.message
 
   config.notificationPrompt = {
     enabled: bool(source.notificationPrompt?.enabled, defaults.notificationPrompt.enabled),

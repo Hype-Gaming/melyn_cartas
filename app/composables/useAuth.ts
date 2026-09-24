@@ -211,7 +211,7 @@ export const useAuth = () => {
     email?: string
     cpf?: string
     password: string 
-  }): Promise<{ success: boolean; message?: string }> => {
+  }, captchaToken = ''): Promise<{ success: boolean; message?: string }> => {
     loading.value = true
     error.value = null
 
@@ -237,14 +237,15 @@ export const useAuth = () => {
         }
 
         try {
-          const response = await $fetch<LoginResponse>(`${brand.apiBaseUrl}/api/auth/login`, {
+          const response = await $fetch<LoginResponse>('/api/session/login', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Brand-Slug': brand.slug,
-              'X-Base-Domain': brand.baseDomain
-            },
-            body
+            body: {
+              email: body.email,
+              password: body.password,
+              brandSlug: brand.slug,
+              baseDomain: brand.baseDomain,
+              captchaToken
+            }
           })
 
           // Sucesso: fixa a marca que autenticou nesta sessão
