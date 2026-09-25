@@ -1,0 +1,39 @@
+/*
+ * Tokens globais do tema escuro.
+ *
+ * As cores de marca (--color-*) são sobrescritas em runtime por useVisualConfig,
+ * com o que estiver salvo em /admin/visual. Os valores daqui são o que aparece
+ * antes de a config carregar — e a única definição se a API estiver fora do ar.
+ *
+ * Este é o único arquivo CSS carregado globalmente (nuxt.config.ts > css).
+ */
+:root {
+  --bg-dark: #090909;
+  --bg-darker: #050505;
+  --card-bg: #151515;
+  --component-bg: #171717;
+  --input-bg: #101010;
+  --card-border: #ffffff14;
+  --text-main: #ffffff;
+  --text-muted: #aaaaaa;
+
+  --color-primary: #8b7cf6;
+  --color-primary-dark: #6657d8;
+  --color-secondary: #d9b76e;
+  --color-secondary-dark: #a9853f;
+  --color-gold: #d9b76e;
+  --color-fire: #b49af8;
+  --color-danger: #ef6a86;
+
+  /*
+   * Destaque da marca: --accent segue a cor primária e --accent-soft é o tom
+   * claro dos rótulos pequenos. useVisualConfig reaplica os dois ao trocar o tema.
+   */
+  --accent: var(--color-primary);
+  --accent-soft: var(--color-secondary);
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 18px;
+  --transition: 0.18s ease;
+}

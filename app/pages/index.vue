@@ -1,1542 +1,823 @@
 <template>
-    <div class="dashboard">
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Center Content -->
-            <div class="center-content">
-                <section class="member-hero">
-                    <div><span>Área de membros</span><h1>Olá, {{ user?.first_name || user?.name?.split(' ')[0] || 'membro' }}</h1><p>Seu conteúdo, benefícios e comunidade em um só lugar.</p></div>
-                    <NuxtLink to="/perfil" class="member-summary"><Icon name="ph:wallet-bold" /><span>Seu saldo<strong>{{ formattedBalance }}</strong></span><Icon name="ph:caret-right-bold" /></NuxtLink>
-                </section>
-                <nav class="member-shortcuts" aria-label="Atalhos principais">
-                    <component :is="shortcut.href === '#roleta' ? 'button' : resolveNuxtLink" v-for="shortcut in appConfig.memberExperience.shortcuts" :key="shortcut.id" :to="shortcut.href === '#roleta' ? undefined : shortcut.href" type="button" @click="shortcut.href === '#roleta' && (showWheel = true)">
-                        <span><Icon :name="shortcut.icon" /></span>{{ shortcut.label }}
-                    </component>
-                </nav>
-                <!-- Banner Carousel -->
-                <div class="banner-carousel">
-                    <button class="carousel-btn prev" @click="prevBanner">
-                        <Icon name="ph:caret-left-bold" />
-                    </button>
-                    <div class="banner-slides">
-                        <div
-                            class="banner-slide"
-                            v-for="(banner, index) in banners"
-                            :key="index"
-                            :class="{ active: currentBanner === index }"
-                        >
-                            <a
-                                :href="banner.link"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="banner-link"
-                            >
-                                <img :src="banner.image" :alt="banner.alt" />
-                            </a>
-                        </div>
-                    </div>
-                    <button class="carousel-btn next" @click="nextBanner">
-                        <Icon name="ph:caret-right-bold" />
-                    </button>
-                    <div class="carousel-dots">
-                        <span
-                            class="dot"
-                            v-for="(banner, index) in banners"
-                            :key="index"
-                            :class="{ active: currentBanner === index }"
-                            @click="currentBanner = index"
-                        ></span>
-                    </div>
-                </div>
+  <div class="home">
+    <!-- Boas-vindas e saldo -->
+    <section class="home-hero">
+      <div class="hero-text">
+        <p class="eyebrow">Área de membros</p>
+        <h1>Olá, {{ firstName }}</h1>
+        <p class="hero-copy">Seu conteúdo, benefícios e comunidade em um só lugar.</p>
+      </div>
 
-                <!-- IA Prime -->
-                <div id="jogos" class="games-section">
-                    <div class="games-header">
-                        <h2 class="games-title">
-                            <Icon
-                                name="ph:sparkle-bold"
-                                class="title-icon"
-                            />
-                            {{ appConfig.content.primeTitle }}
-                        </h2>
-                    </div>
-                    <div class="games-grid">
-                        <a
-                            v-for="(game, index) in primeGames"
-                            :key="index"
-                            :href="game.href"
-                            class="game-card"
-                            :class="{ 'is-managed-locked': game.status !== 'enabled' }"
-                            @click="handleManagedGameClick($event, game)"
-                        >
-                            <div class="game-image">
-                                <img
-                                    :src="game.image"
-                                    :alt="game.name"
-                                    v-if="game.image"
-                                />
-                            </div>
-                            <div class="game-info">
-                                <h3 class="game-name">{{ game.name }}</h3>
-                                <span
-                                    class="game-provider"
-                                    v-if="game.provider"
-                                >
-                                    <Icon
-                                        name="ph:play-fill"
-                                        class="provider-icon"
-                                    />
-                                    {{ game.provider }}
-                                </span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+      <button type="button" class="hero-balance" @click="openWallet">
+        <Icon name="ph:wallet-bold" aria-hidden="true" />
+        <span>Seu saldo<strong>{{ formattedBalance }}</strong></span>
+        <Icon name="ph:caret-right-bold" aria-hidden="true" />
+      </button>
+    </section>
 
-                <!-- IA Premium -->
-                <div class="games-section premium-section">
-                    <div class="games-header">
-                        <h2 class="games-title">
-                            <Icon
-                                name="ph:crown-bold"
-                                class="title-icon title-icon-premium"
-                            />
-                            {{ appConfig.content.premiumTitle }}
-                        </h2>
-                    </div>
-                    <div class="games-grid">
-                        <a
-                            v-for="(game, index) in premiumGames"
-                            :key="index"
-                            :href="isSubscribed ? game.href : checkoutUrl"
-                            :target="isSubscribed ? '_self' : '_blank'"
-                            rel="noopener noreferrer"
-                            class="game-card card-premium-locked"
-                            :class="{ 'is-locked': !isPaid }"
-                            @click="handleManagedGameClick($event, game)"
-                        >
-                            <div class="game-image">
-                                <img
-                                    :src="game.image"
-                                    :alt="game.name"
-                                    v-if="game.image"
-                                />
-                                <div v-if="!isPaid" class="permanent-lock premium-lock">
-                                    <Icon name="ph:lock-key-fill" class="permanent-lock-icon" />
-                                </div>
-                            </div>
-                            <div class="game-info">
-                                <h3 class="game-name">{{ game.name }}</h3>
-                                <span v-if="!isPaid" class="game-provider game-unlock">
-                                    <Icon name="ph:lock-bold" class="provider-icon" />
-                                    Desbloquear acesso
-                                </span>
-                                <span v-else class="game-provider game-unlocked">
-                                    <Icon name="ph:play-fill" class="provider-icon" />
-                                    Acessar agora
-                                </span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+    <!-- Atalhos -->
+    <nav v-if="shortcuts.length" class="shortcuts" aria-label="Atalhos">
+      <template v-for="(shortcut, index) in shortcuts" :key="`${shortcut.href}-${index}`">
+        <a
+          v-if="shortcut.external"
+          :href="shortcut.href"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="shortcut"
+        >
+          <span class="shortcut-icon">
+            <img v-if="shortcut.image" :src="shortcut.image" :alt="shortcut.label" />
+            <Icon v-else :name="shortcut.icon" aria-hidden="true" />
+          </span>
+          <span class="shortcut-label">{{ shortcut.label }}</span>
+        </a>
+        <NuxtLink v-else :to="shortcut.href" class="shortcut">
+          <span class="shortcut-icon">
+            <img v-if="shortcut.image" :src="shortcut.image" :alt="shortcut.label" />
+            <Icon v-else :name="shortcut.icon" aria-hidden="true" />
+          </span>
+          <span class="shortcut-label">{{ shortcut.label }}</span>
+        </NuxtLink>
+      </template>
+    </nav>
 
-                <!-- IA Claude -->
-                <div class="games-section claude-section">
-                    <div class="games-header">
-                        <h2 class="games-title">
-                            <Icon
-                                name="ph:lightning-fill"
-                                class="title-icon title-icon-claude"
-                            />
-                            {{ appConfig.content.claudeTitle }}
-                        </h2>
-                    </div>
-                    <div class="games-grid">
-                        <a
-                            v-for="(game, index) in claudeGames"
-                            :key="index"
-                            :href="isSubscribed ? game.href : game.checkoutUrl"
-                            :target="isSubscribed ? '_self' : '_blank'"
-                            rel="noopener noreferrer"
-                            class="game-card card-claude-locked"
-                            :class="{ 'is-locked': !isPaid }"
-                            @click="handleManagedGameClick($event, game)"
-                        >
-                            <div class="game-image">
-                                <img
-                                    :src="game.image"
-                                    :alt="game.name"
-                                    v-if="game.image"
-                                />
-                                <div v-if="!isPaid" class="permanent-lock claude-lock">
-                                    <Icon name="ph:lock-key-fill" class="permanent-lock-icon" />
-                                </div>
-                            </div>
-                            <div class="game-info">
-                                <h3 class="game-name">{{ game.name }}</h3>
-                                <span v-if="!isPaid" class="game-provider game-unlock">
-                                    <Icon name="ph:lock-bold" class="provider-icon" />
-                                    Desbloquear acesso
-                                </span>
-                                <span v-else class="game-provider game-unlocked">
-                                    <Icon name="ph:play-fill" class="provider-icon" />
-                                    Acessar agora
-                                </span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+    <!-- Ao vivo -->
+    <section class="live-strip">
+      <span class="live-dot" aria-hidden="true"></span>
+      <div class="live-text">
+        <strong>{{ homeConfig.liveTitle }}</strong>
+        <span>{{ homeConfig.liveAt }}</span>
+      </div>
+      <NuxtLink :to="homeConfig.liveHref" class="live-action">Entrar</NuxtLink>
+    </section>
 
-                <!-- Links Úteis -->
-                <div class="links-section">
-                    <h2 class="section-title">{{ appConfig.content.linksTitle }}</h2>
-                    <div class="links-grid">
-                        <NuxtLink
-                            v-for="(link, index) in usefulLinks"
-                            :key="index"
-                            :to="link.external ? link.href : link.href || '#'"
-                            :href="link.external ? link.href : undefined"
-                            :target="link.external ? '_blank' : undefined"
-                            :rel="
-                                link.external
-                                    ? 'noopener noreferrer'
-                                    : undefined
-                            "
-                            :external="link.external"
-                            class="link-card"
-                            :class="{ 'link-active': link.active }"
-                            @click="handleUsefulLinkClick($event, link)"
-                        >
-                            <Icon :name="link.icon" class="link-icon" />
-                            <span class="link-text">{{ link.name }}</span>
-                        </NuxtLink>
-                    </div>
-                </div>
+    <!-- Destaque: vídeo ou carrossel -->
+    <section v-if="heroVideoSrc" class="hero-media">
+      <video
+        class="hero-video"
+        :src="heroVideoSrc"
+        :poster="banners[0]?.image"
+        controls
+        playsinline
+        preload="metadata"
+      ></video>
+    </section>
 
-                <!-- Destaques -->
-                <div v-if="appConfig.features.highlights" class="highlights-section">
-                    <div class="highlights-header">
-                        <h2 class="section-title">{{ appConfig.content.highlightsTitle }}</h2>
-                        <div class="highlights-nav">
-                            <button class="nav-btn">
-                                <Icon name="ph:caret-left-bold" />
-                            </button>
-                            <button class="nav-btn">
-                                <Icon name="ph:caret-right-bold" />
-                            </button>
-                        </div>
-                    </div>
-                    <div class="highlights-grid">
-                        <NuxtLink
-                            :to="highlight.href || '#'"
-                            class="highlight-card"
-                            v-for="(highlight, index) in highlights"
-                            :key="index"
-                            @click="guardRoute"
-                        >
-                            <img :src="highlight.image" :alt="highlight.name" />
-                        </NuxtLink>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <section v-else-if="banners.length" class="hero-media" aria-label="Campanhas">
+      <div ref="carousel" class="carousel" @scroll.passive="onCarouselScroll">
+        <a
+          v-for="(banner, index) in banners"
+          :key="index"
+          class="carousel-slide"
+          :href="banner.href || undefined"
+          :target="banner.external ? '_blank' : undefined"
+          :rel="banner.external ? 'noopener noreferrer' : undefined"
+        >
+          <img :src="banner.image" :alt="`Campanha ${index + 1}`" />
+        </a>
+      </div>
+      <div v-if="banners.length > 1" class="carousel-dots">
+        <button
+          v-for="(banner, index) in banners"
+          :key="index"
+          type="button"
+          class="carousel-dot"
+          :class="{ active: currentBanner === index }"
+          :aria-label="`Ir para a campanha ${index + 1}`"
+          :aria-current="currentBanner === index"
+          @click="goToBanner(index)"
+        ></button>
+      </div>
+    </section>
 
-        <!-- Deposit Modal -->
-        <!-- DepositModal lives in the default layout so every page can open it. -->
+    <!-- XP -->
+    <section class="xp-card">
+      <header>
+        <span>{{ homeConfig.xpLabel }}</span>
+        <strong>{{ homeConfig.xpCurrent.toLocaleString("pt-BR") }} / {{ homeConfig.xpGoal.toLocaleString("pt-BR") }}</strong>
+      </header>
+      <div
+        class="xp-track"
+        role="progressbar"
+        :aria-valuenow="xpPercent"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-label="homeConfig.xpLabel"
+      >
+        <span :style="{ width: `${xpPercent}%` }"></span>
+      </div>
+    </section>
 
-        <!-- Subscription Modal -->
-        <!-- Pop-up de desbloqueio de assinatura desativado a pedido (será removido).
-             Usuários não pagos agora vão direto para a Lastlink ao clicar em jogo pago. -->
-        <!-- <SubscriptionModal /> -->
+    <!-- Catálogo -->
+    <section
+      v-for="group in gameGroups"
+      :key="group.category"
+      :id="group.category === 'prime' ? 'jogos' : undefined"
+      class="games-section"
+    >
+      <header class="games-header">
+        <h2><Icon :name="group.icon" aria-hidden="true" /> {{ group.title }}</h2>
+      </header>
 
-        <!-- Grupo VIP Modal -->
-        <Teleport to="body">
-            <div
-                v-if="showGrupoModal"
-                class="grupo-modal-overlay"
-                @click="closeGrupoModal"
-            >
-                <div class="grupo-modal" @click.stop>
-                    <button class="grupo-modal-close" @click="closeGrupoModal">
-                        <Icon name="ph:x-bold" />
-                    </button>
-                    <a
-                        :href="socialLinks.whatsapp"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="grupo-banner-link"
-                        @click="closeGrupoModal"
-                    >
-                        <img
-                            src="/banners/ENTRE-NA-MINHA-COMUNIDADE-DUDA.png"
-                            alt="Entre na minha comunidade"
-                            class="grupo-banner-img"
-                        />
-                    </a>
-                </div>
-            </div>
-        </Teleport>
-        <DailyWheelModal :open="showWheel" :config="appConfig.memberExperience.wheel" @close="showWheel = false" />
-        <CampaignModal :open="showCampaign" :campaign="appConfig.memberExperience.campaign" @close="closeCampaign" />
-    </div>
+      <div class="games-grid">
+        <a
+          v-for="game in group.games"
+          :key="game.id"
+          :href="game.href"
+          class="game-card"
+          :class="{ locked: game.locked }"
+          @click="onGameClick($event, game)"
+        >
+          <div class="game-cover">
+            <img v-if="game.image" :src="game.image" :alt="game.name" loading="lazy" />
+            <span v-if="game.locked" class="game-lock" aria-label="Jogo bloqueado">
+              <Icon name="ph:lock-key-fill" aria-hidden="true" />
+            </span>
+          </div>
+          <div class="game-info">
+            <h3>{{ game.name }}</h3>
+            <span v-if="game.locked" class="game-tag">Desbloquear acesso</span>
+            <span v-else-if="game.provider" class="game-tag">
+              <Icon name="ph:play-fill" aria-hidden="true" /> {{ game.provider }}
+            </span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Conecte-se -->
+    <section v-if="homeConfig.connectionLinks.length" class="connect-section">
+      <h2>Conecte-se</h2>
+      <div class="connect-grid">
+        <component
+          :is="link.external ? 'a' : NuxtLink"
+          v-for="(link, index) in homeConfig.connectionLinks"
+          :key="`${link.href}-${index}`"
+          class="connect-card"
+          :href="link.external ? link.href : undefined"
+          :to="link.external ? undefined : link.href"
+          :target="link.external ? '_blank' : undefined"
+          :rel="link.external ? 'noopener noreferrer' : undefined"
+        >
+          <span class="connect-icon"><Icon :name="link.icon" aria-hidden="true" /></span>
+          <span class="connect-text">
+            <small>Comunidade</small>
+            <strong>{{ link.label }}</strong>
+            <span v-if="link.description">{{ link.description }}</span>
+          </span>
+          <Icon name="ph:caret-right-bold" class="connect-arrow" aria-hidden="true" />
+        </component>
+      </div>
+    </section>
+
+    <p class="responsible">
+      <Icon name="ph:warning-circle-bold" aria-hidden="true" />
+      Jogue com responsabilidade. Conteúdo para maiores de 18 anos.
+    </p>
+
+    <IntroVideoModal />
+    <RouletteInitialModal :open="showRouletteInvite" @close="closeRouletteInvite" />
+  </div>
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from "#components";
 import { CHECKOUT_URLS } from "../constants/checkoutLinks";
+import { videoUrl } from "../../shared/videos";
 
-definePageMeta({
-    layout: "default",
-});
+definePageMeta({ layout: "default" });
 
-const { user, logout, isAuthenticated, formattedBalance, fetchUserProfile } =
-    useAuth();
-const { openModal: openDepositModal } = useDeposit();
-const {
-    isSubscribed,
-    isPaid,
-    init: initSubscription,
-} = useSubscription();
-
+const { user, isAuthenticated, formattedBalance, fetchUserProfile } = useAuth();
+const { isSubscribed, init: initSubscription } = useSubscription();
 const { config: appConfig, resolveAssetUrl } = useVisualConfig();
-const resolveNuxtLink = resolveComponent('NuxtLink');
-const showWheel = ref(false);
-const showCampaign = ref(false);
-const closeCampaign = () => {
-    showCampaign.value = false;
-    sessionStorage.setItem('member_campaign_seen', '1');
-};
+const { config: homeConfigState, load: loadHomeConfig } = useHomeConfig();
+const { openWallet } = useWalletModal();
+const intro = useIntroVideo();
 
-// Links e textos vêm do painel /admin/visual; os valores do código são o fallback.
-const checkoutUrl = computed(
-    () => appConfig.value.links.checkout || CHECKOUT_URLS.main,
+const homeConfig = homeConfigState;
+
+const firstName = computed(
+    () => user.value?.first_name || user.value?.name?.split(" ")[0] || "membro",
 );
-const socialLinks = computed(() => ({
-    whatsapp:
-        appConfig.value.links.whatsappCommunity ||
-        "https://chat.whatsapp.com/LtELxASK4F07hY2GShxVAv?s=cl&p=i&ilr=1",
-    instagram:
-        appConfig.value.links.instagram ||
-        "https://www.instagram.com/mariainvest_/",
-    telegram: appConfig.value.links.telegram || "https://t.me/+bL3Px9mB3oJkNzdh",
-}));
 
-const refreshSubscriptionAccess = async (force = false) => {
-    if (!isAuthenticated.value) return;
-    await initSubscription(user.value?.email || null, { force });
-};
+const checkoutUrl = computed(() => appConfig.value.links.checkout || CHECKOUT_URLS.main);
 
-const handleWindowFocus = () => {
-    refreshSubscriptionAccess(true);
-};
-
-// Atualizar balance e verificar assinatura ao montar a página
-onMounted(() => {
-    if (isAuthenticated.value) {
-        fetchUserProfile();
-    }
-    refreshSubscriptionAccess();
-
-    window.addEventListener("focus", handleWindowFocus);
-    window.addEventListener("pageshow", handleWindowFocus);
-    if (appConfig.value.memberExperience.campaign.enabled && !sessionStorage.getItem('member_campaign_seen')) {
-        window.setTimeout(() => { showCampaign.value = true; }, 700);
-    }
-});
+const shortcuts = computed(() => homeConfig.value.shortcuts);
+const heroVideoSrc = computed(() => videoUrl(homeConfig.value.heroVideo));
 
 const banners = computed(() =>
-    appConfig.value.images.banners.map((image) => ({
-        image: resolveAssetUrl(image),
-        alt: appConfig.value.brand.name,
-        link: socialLinks.value.whatsapp,
-    })),
+    homeConfig.value.banners.length
+        ? homeConfig.value.banners
+        : // Sem banners na config da home, usa os do painel visual.
+          appConfig.value.images.banners.map((image) => ({
+              image: resolveAssetUrl(image),
+              href: appConfig.value.links.whatsappCommunity || "",
+              external: true,
+          })),
 );
 
-const currentBanner = ref(0);
-const showProfileDropdown = ref(false);
+const xpPercent = computed(() =>
+    Math.min(100, Math.round((homeConfig.value.xpCurrent / Math.max(1, homeConfig.value.xpGoal)) * 100)),
+);
 
-const toggleProfileDropdown = () => {
-    if (!isAuthenticated.value) {
-        redirectToLogin();
+/*
+ * Catálogo: a config da home pode fixar jogos, mas o padrão é o catálogo
+ * gerenciado em /admin/visual, que é quem conhece rotas, sinais e status.
+ */
+const managedGames = (category: "prime" | "premium" | "claude") =>
+    appConfig.value.games
+        .filter((game) => game.tabKey === category && game.status !== "hidden")
+        .sort((a, b) => a.order - b.order)
+        .map((game) => ({
+            id: game.gameId,
+            name: game.title,
+            provider: game.description || "",
+            image: resolveAssetUrl(game.imageUrl),
+            href: game.route,
+            category,
+            status: game.status,
+            requiresLogin: game.requiresLogin,
+            locked: category !== "prime" && !isSubscribed.value,
+        }));
+
+const pinnedGames = (category: "prime" | "premium" | "claude") =>
+    homeConfig.value.games
+        .filter((game) => game.category === category)
+        .map((game) => ({
+            id: game.id,
+            name: game.name,
+            provider: game.provider,
+            image: game.image,
+            href: `/jogo/${game.id}`,
+            category,
+            status: "enabled" as const,
+            requiresLogin: true,
+            locked: game.locked || (category !== "prime" && !isSubscribed.value),
+        }));
+
+type HomeGameCard = ReturnType<typeof managedGames>[number];
+
+const gameGroups = computed(() =>
+    (
+        [
+            { category: "prime" as const, title: appConfig.value.content.primeTitle, icon: "ph:sparkle-bold" },
+            { category: "premium" as const, title: appConfig.value.content.premiumTitle, icon: "ph:crown-bold" },
+            { category: "claude" as const, title: appConfig.value.content.claudeTitle, icon: "ph:lightning-fill" },
+        ]
+    )
+        .map((group) => ({
+            ...group,
+            games: homeConfig.value.games.length ? pinnedGames(group.category) : managedGames(group.category),
+        }))
+        .filter((group) => group.games.length),
+);
+
+const redirectToLogin = (destination = "/") =>
+    navigateTo({ path: "/auth/login", query: { redirect: destination } });
+
+const onGameClick = (event: MouseEvent, game: HomeGameCard) => {
+    event.preventDefault();
+
+    if (game.status !== "enabled") {
+        window.alert(
+            game.status === "maintenance"
+                ? "Este jogo está temporariamente em manutenção."
+                : "Este jogo está bloqueado no momento.",
+        );
         return;
     }
-    showProfileDropdown.value = !showProfileDropdown.value;
-};
 
-const redirectToLogin = (destination = '/') => {
-    showProfileDropdown.value = false;
-    return navigateTo({ path: "/auth/login", query: { redirect: destination } });
-};
+    if (game.requiresLogin && !isAuthenticated.value) return redirectToLogin(game.href);
 
-const requireAuth = (event?: Event) => {
-    if (isAuthenticated.value) return true;
-    event?.preventDefault();
-    const href = event?.currentTarget instanceof HTMLAnchorElement ? event.currentTarget.getAttribute('href') : null;
-    redirectToLogin(href?.startsWith('/') ? href : '/');
-    return false;
-};
-
-const guardRoute = (event: Event) => {
-    requireAuth(event);
-};
-
-const handleDepositClick = () => {
-    if (!requireAuth()) return;
-    openDepositModal();
-};
-
-const handleSubscriptionClick = () => {
-    if (!requireAuth()) return;
-    window.open(checkoutUrl.value, "_blank", "noopener,noreferrer");
-};
-
-const handleNewsClick = (event: Event, news: { href?: string; external?: boolean }) => {
-    if (news.external) return;
-
-    const href = news.href || "#";
-    if (href === "#") {
-        event.preventDefault();
+    // Jogo pago sem assinatura vai para o checkout, como antes.
+    if (game.locked) {
+        window.open(checkoutUrl.value, "_blank", "noopener,noreferrer");
+        return;
     }
 
-    requireAuth(event);
-};
-
-const handleUsefulLinkClick = (event: Event, link: { href?: string; external?: boolean }) => {
-    if (link.external) return;
-
-    const href = link.href || "#";
-    if (href === "#") {
-        event.preventDefault();
+    // Primeiro jogo grátis só abre depois do vídeo de boas-vindas.
+    if (game.category === "prime" && intro.required.value) {
+        intro.show(game.href);
+        return;
     }
 
-    requireAuth(event);
+    navigateTo(game.href);
 };
 
-// Fechar dropdown ao clicar fora
-const closeDropdown = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest(".profile-wrapper")) {
-        showProfileDropdown.value = false;
+// --- Carrossel -------------------------------------------------------------
+const carousel = ref<HTMLElement | null>(null);
+const currentBanner = ref(0);
+let autoplay: ReturnType<typeof setInterval> | null = null;
+
+const scrollToBanner = (index: number) => {
+    const element = carousel.value;
+    if (!element) return;
+    element.scrollTo({ left: element.clientWidth * index, behavior: "smooth" });
+};
+
+const goToBanner = (index: number) => {
+    currentBanner.value = index;
+    scrollToBanner(index);
+};
+
+const onCarouselScroll = () => {
+    const element = carousel.value;
+    if (!element?.clientWidth) return;
+    currentBanner.value = Math.round(element.scrollLeft / element.clientWidth);
+};
+
+// --- Convite da roleta -----------------------------------------------------
+const showRouletteInvite = ref(false);
+const closeRouletteInvite = () => {
+    showRouletteInvite.value = false;
+    sessionStorage.setItem("roulette_invite_seen", "1");
+};
+
+onMounted(async () => {
+    loadHomeConfig();
+
+    if (isAuthenticated.value) {
+        fetchUserProfile();
+        await initSubscription(user.value?.email || null);
     }
-};
 
-const handleLogout = async () => {
-    showProfileDropdown.value = false;
-    await logout();
-};
+    await intro.autoOpen();
 
-const nextBanner = () => {
-    currentBanner.value = (currentBanner.value + 1) % banners.value.length;
-};
+    // O convite da roleta não disputa a tela com o vídeo de boas-vindas.
+    if (isAuthenticated.value && !intro.open.value && !sessionStorage.getItem("roulette_invite_seen")) {
+        const available = await $fetch<{ available: boolean }>("/api/track/roulette", {
+            params: { email: user.value?.email || "" },
+        }).catch(() => null);
+        if (available?.available) {
+            setTimeout(() => (showRouletteInvite.value = true), 900);
+        }
+    }
 
-const prevBanner = () => {
-    currentBanner.value =
-        currentBanner.value === 0
-            ? banners.value.length - 1
-            : currentBanner.value - 1;
-};
-
-// Auto-slide every 5 seconds
-onMounted(() => {
-    setInterval(() => {
-        nextBanner();
+    autoplay = setInterval(() => {
+        if (banners.value.length > 1) goToBanner((currentBanner.value + 1) % banners.value.length);
     }, 5000);
-    document.addEventListener("click", closeDropdown);
 });
 
 onUnmounted(() => {
-    document.removeEventListener("click", closeDropdown);
-    window.removeEventListener("focus", handleWindowFocus);
-    window.removeEventListener("pageshow", handleWindowFocus);
+    if (autoplay) clearInterval(autoplay);
 });
 
-const newsItems = computed(() => [
-    {
-        title: "Nova estratégia liberada",
-        description:
-            "Entrou no ar uma nova estratégia para o jogo Evolution Gaming!",
-        icon: "ph:lightning-bold",
-        href: "#",
-    },
-    {
-        title: "Novo Canal de Lives",
-        description:
-            "Confira o novo canal de lives com análises em tempo real.",
-        icon: "ph:video-camera-bold",
-        href: socialLinks.value.telegram,
-        external: true,
-    },
-    {
-        title: "Atualização nas odds",
-        description:
-            "Veja o novo ajuste nas odds do Evolution Gaming. Aproveite!",
-        icon: "ph:chart-line-up-bold",
-        href: "#",
-    },
-    {
-        title: "Comunidade WhatsApp",
-        description: "Participe da nossa comunidade exclusiva no WhatsApp.",
-        icon: "ph:whatsapp-logo-bold",
-        href: socialLinks.value.whatsapp,
-        external: true,
-    },
-    {
-        title: "Aprenda a Operar",
-        description: "Confira as melhores estratégias para começar a operar.",
-        icon: "ph:graduation-cap-bold",
-        href: "/aulas",
-    },
-]);
-
-const managedGames = (tabKey: 'prime' | 'premium' | 'claude') => appConfig.value.games
-    .filter(game => game.tabKey === tabKey && game.status !== 'hidden')
-    .sort((a, b) => a.order - b.order)
-    .map(game => ({ ...game, id: game.gameId, name: game.title, provider: game.description, image: resolveAssetUrl(game.imageUrl), href: game.route }));
-const primeGames = computed(() => managedGames('prime'));
-
-const legacyPremiumGames = ref([
-    {
-        id: "bac-bo-en",
-        name: "BAC BO EN",
-        image: "/games/bac-bo-en.png",
-    },
-    {
-        id: "bac-bo-brasileiro",
-        name: "BAC BO BRASILEIRO",
-        image: "/games/bac-bo-ao-vivo.png",
-    },
-    {
-        id: "football-studio-ao-vivo",
-        name: "FUTEBOL STUDIO AO VIVO",
-        image: "/games/football-studio-br.png",
-    },
-    {
-        id: "football-studio",
-        name: "FOOTBALL STUDIO",
-        image: "/games/football-studio.png",
-    },
-    {
-        id: "baccarat",
-        name: "BACCARAT",
-        image: "/games/baccarat.png",
-    },
-    {
-        id: "dragon-tiger",
-        name: "DRAGON TIGER",
-        image: "/games/dragon-tiger.png",
-    },
-    {
-        id: "aviator",
-        name: "AVIATOR",
-        image: "/games/aviator.png",
-    },
-]);
-const premiumGames = computed(() => managedGames('premium'));
-
-const claudeGames = computed(() => managedGames('claude').map(game => ({ ...game, checkoutUrl: appConfig.value.links.checkoutSemGale || CHECKOUT_URLS.legacySemGale })));
-
-const showGrupoModal = ref(false);
-const openGrupoModal = () => {
-    showGrupoModal.value = true;
-};
-const closeGrupoModal = () => {
-    showGrupoModal.value = false;
-};
-
-const handleLockedGameClick = (event: MouseEvent, gameId: string) => {
-    event.preventDefault();
-
-    if (!requireAuth(event)) return;
-
-    if (isSubscribed.value) {
-        navigateTo(`/jogo/${gameId}`);
-        return;
-    }
-
-    const game = claudeGames.value.find((item) => item.id === gameId);
-    const lockedCheckoutUrl = game?.checkoutUrl || checkoutUrl.value;
-    window.open(lockedCheckoutUrl, "_blank", "noopener,noreferrer");
-};
-
-const handleManagedGameClick = (event: MouseEvent, game: ReturnType<typeof managedGames>[number] & { checkoutUrl?: string }) => {
-    if (game.status !== 'enabled') {
-        event.preventDefault();
-        window.alert(game.status === 'maintenance' ? 'Este jogo está temporariamente em manutenção.' : 'Este jogo está bloqueado no momento.');
-        return;
-    }
-    if (game.requiresLogin && !requireAuth(event)) return;
-    if (game.tabKey === 'prime') return;
-    event.preventDefault();
-    if (isSubscribed.value) {
-        navigateTo(game.route);
-        return;
-    }
-    const lockedCheckoutUrl = game.checkoutUrl || checkoutUrl.value;
-    window.open(lockedCheckoutUrl, '_blank', 'noopener,noreferrer');
-};
-
-const usefulLinks = computed(() => [
-    {
-        name: "Gestão de Banca",
-        icon: "ph:calculator-bold",
-        active: false,
-        href: "/gestao",
-    },
-    {
-        name: "Aulas",
-        icon: "ph:graduation-cap-bold",
-        active: false,
-        href: "/aulas",
-    },
-    {
-        name: "WhatsApp",
-        icon: "ph:whatsapp-logo-bold",
-        active: false,
-        href: socialLinks.value.whatsapp,
-        external: true,
-    },
-    {
-        name: "Instagram",
-        icon: "ph:instagram-logo-bold",
-        active: false,
-        href: socialLinks.value.instagram,
-        external: true,
-    },
-    {
-        name: "Telegram",
-        icon: "ph:telegram-logo-bold",
-        active: false,
-        href: socialLinks.value.telegram,
-        external: true,
-    },
-]);
-
-const highlights = ref([
-    { name: "Aprenda a Operar", image: "/cards/operar.png", href: "/aulas" },
-    {
-        name: "Gestão de Banca",
-        image: "/cards/gestaodebanca.png",
-        href: "/gestao",
-    },
-]);
+useHead({ title: () => appConfig.value.brand.name });
 </script>
 
 <style scoped>
-.dashboard {
-    min-height: 100vh;
-    background-color: #0a0a0a;
-    color: #ffffff;
+.home {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    padding: clamp(18px, 4vw, 34px) 16px 60px;
+    color: var(--text-main);
 }
 
-.member-hero { display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:22px;padding:24px;border:1px solid var(--card-border);border-radius:20px;background:linear-gradient(125deg,color-mix(in srgb,var(--color-primary) 13%,var(--card-bg)),var(--card-bg));box-shadow:0 16px 45px #0003; }
-.member-hero>div>span { color:var(--color-secondary);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase; }.member-hero h1{margin:5px 0;font-size:clamp(25px,4vw,36px)}.member-hero p{color:var(--text-muted)}
-.member-summary{display:flex;align-items:center;gap:12px;min-width:190px;padding:13px 15px;border:1px solid var(--card-border);border-radius:14px;background:color-mix(in srgb,var(--component-bg) 86%,transparent);color:var(--text-main);text-decoration:none}.member-summary>svg{color:var(--color-primary);font-size:22px}.member-summary span{display:grid;flex:1;color:var(--text-muted);font-size:11px}.member-summary strong{color:var(--text-main);font-size:15px}
-.member-shortcuts{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.member-shortcuts a,.member-shortcuts button{display:grid;justify-items:center;gap:9px;padding:8px;border:0;background:none;color:var(--text-muted);font:inherit;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer}.member-shortcuts span{display:grid;place-items:center;width:58px;height:58px;border:1px solid color-mix(in srgb,var(--color-primary) 25%,var(--card-border));border-radius:50%;background:linear-gradient(145deg,var(--component-bg),var(--card-bg));color:var(--color-primary);font-size:23px;box-shadow:0 10px 24px #0004}.member-shortcuts a:hover span,.member-shortcuts button:hover span{transform:translateY(-2px);border-color:var(--color-primary)}
-@media(max-width:600px){.member-hero{align-items:stretch;flex-direction:column}.member-summary{width:100%}.member-shortcuts{gap:5px}.member-shortcuts a,.member-shortcuts button{font-size:10px}.member-shortcuts span{width:50px;height:50px}}
+.eyebrow {
+    color: var(--accent-soft);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
 
-/* Header */
-.header {
+/* Boas-vindas */
+.home-hero {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    padding: 12px 24px;
-    background-color: #111111;
-    border-bottom: 1px solid #222222;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    gap: 22px;
+    padding: clamp(18px, 4vw, 26px);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(125deg, color-mix(in srgb, var(--accent) 13%, var(--card-bg)), var(--card-bg));
+    box-shadow: 0 16px 45px rgb(0 0 0 / 22%);
 }
-
-.header-logo {
-    height: 40px;
-    width: auto;
+.home-hero h1 {
+    margin: 5px 0;
+    font-size: clamp(24px, 4vw, 34px);
 }
-
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.balance {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background-color: #1a1a1a;
-    border-radius: 8px;
-    border: 1px solid #333333;
-}
-
-.balance-icon {
-    font-size: 18px;
-    color: var(--color-primary);
-}
-
-.balance-value {
-    color: var(--color-primary);
-    font-weight: 600;
-}
-
-.balance-info {
-    font-size: 16px;
-    color: #666666;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.balance-info:hover {
-    color: var(--color-primary);
-}
-
-.btn-deposit {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
-    border: none;
-    border-radius: 8px;
-    color: #000000;
-    font-weight: 700;
+.hero-copy {
+    color: var(--text-muted);
     font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
-.btn-deposit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.4);
-}
-
-.profile-wrapper {
-    position: relative;
-}
-
-.profile-icon {
-    width: 42px;
-    height: 42px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
-    border-radius: 50%;
+.hero-balance {
     display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 18px;
-    transition: transform 0.2s ease;
-}
-
-.profile-icon:hover {
-    transform: scale(1.05);
-}
-
-.profile-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 8px;
-    min-width: 160px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    z-index: 200;
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.dropdown-user {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px 16px;
-    border-bottom: 1px solid #333;
-}
-
-.user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-}
-
-.user-email {
-    font-size: 12px;
-    color: #888;
-}
-
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    color: #fff;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background 0.2s ease;
-    background: none;
-    border: none;
-    width: 100%;
-    cursor: pointer;
-}
-
-.dropdown-item:hover {
-    background: #222;
-}
-
-.dropdown-item.logout {
-    color: #ef4444;
-}
-
-.dropdown-item.logout:hover {
-    background: rgba(239, 68, 68, 0.1);
-}
-
-/* Main Content */
-.main-content {
-    display: flex;
-    padding: 24px;
-    gap: 24px;
-}
-
-/* Sidebar */
-.home-aside {
-    width: 280px;
-    flex-shrink: 0;
-    order: 2;
-}
-.center-content { order: 1; }
-
-.btn-confirmar-compra {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 12px 16px;
-    background: rgba(var(--color-primary-rgb), 0.08);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-    border-radius: 10px;
-    color: var(--color-primary);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 20px;
-    transition: all 0.2s ease;
-}
-
-.btn-confirmar-compra:hover {
-    background: rgba(var(--color-primary-rgb), 0.15);
-    border-color: var(--color-primary);
-}
-
-.sidebar-title {
-    color: var(--color-primary);
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-}
-
-.news-card.featured {
-    background: linear-gradient(
-        135deg,
-        rgba(var(--color-primary-rgb), 0.18) 0%,
-        rgba(var(--color-primary-rgb), 0.3) 100%
-    );
-    border: 1px solid var(--color-primary);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 16px;
-    text-align: center;
-}
-
-.news-badge {
-    color: var(--color-primary);
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.news-title-big {
-    font-size: 28px;
-    font-weight: 800;
-    color: #ffffff;
-    text-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
-}
-
-.news-item {
-    display: flex;
     gap: 12px;
-    padding: 14px;
-    background-color: #141414;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #222222;
+    min-width: 200px;
+    min-height: 56px;
+    padding: 12px 15px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--component-bg) 86%, transparent);
+    color: var(--text-main);
+    font: inherit;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform var(--transition), border-color var(--transition);
+}
+.hero-balance:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+}
+.hero-balance :deep(svg):first-child {
+    color: var(--accent);
+    font-size: 22px;
+}
+.hero-balance span {
+    display: grid;
+    flex: 1;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-align: left;
+}
+.hero-balance strong {
+    color: var(--text-main);
+    font-size: 16px;
+}
+
+/* Atalhos */
+.shortcuts {
+    display: flex;
+    gap: 14px;
+    margin: 22px 0;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.shortcuts::-webkit-scrollbar {
+    display: none;
+}
+.shortcut {
+    display: grid;
+    flex: 0 0 auto;
+    justify-items: center;
+    gap: 9px;
+    width: 74px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
     text-decoration: none;
 }
-
-.news-item:hover {
-    border-color: var(--color-primary);
-    background-color: #1a1a1a;
+.shortcut-icon {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--card-border));
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--component-bg), var(--card-bg));
+    color: var(--accent);
+    font-size: 23px;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 25%);
+    transition: transform var(--transition), border-color var(--transition);
+}
+.shortcut-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.shortcut:hover .shortcut-icon {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+}
+.shortcut:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 14px;
 }
 
-.news-icon {
-    width: 48px;
-    height: 48px;
-    background-color: #222222;
-    border-radius: 8px;
+/* Ao vivo */
+.live-strip {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: var(--component-bg);
 }
-
-.news-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-.news-icon-svg {
-    font-size: 24px;
-    color: var(--color-primary);
-}
-
-.news-content {
-    flex: 1;
-}
-
-.news-title {
-    color: var(--color-primary);
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-}
-
-.news-description {
-    color: #888888;
-    font-size: 12px;
-    margin: 0;
-    line-height: 1.4;
-}
-
-/* Center Content */
-.center-content {
-    flex: 1;
-}
-
-/* Banner Carousel */
-.banner-carousel {
-    position: relative;
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 32px;
-}
-
-.banner-slides {
-    position: relative;
-    width: 100%;
-}
-
-.banner-slide {
-    display: none;
-    width: 100%;
-    aspect-ratio: 3 / 1;
-    background: #03060b;
-}
-
-.banner-slide.active {
-    display: block;
-}
-
-.banner-slide img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.banner-link {
-    display: block;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-}
-
-.carousel-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 48px;
-    height: 48px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border: 1px solid #444444;
-    border-radius: 50%;
-    color: #ffffff;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 3;
-    transition: all 0.2s ease;
-}
-
-.carousel-btn:hover {
-    background-color: rgba(var(--color-primary-rgb), 0.3);
-    border-color: var(--color-primary);
-}
-
-.carousel-btn.prev {
-    left: 16px;
-}
-
-.carousel-btn.next {
-    right: 16px;
-}
-
-.carousel-dots {
-    position: absolute;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    z-index: 3;
-}
-
-.dot {
+.live-dot {
     width: 10px;
     height: 10px;
-    background-color: rgba(255, 255, 255, 0.4);
     border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    background: #4ade80;
+    box-shadow: 0 0 0 5px #4ade8022;
+}
+.live-text {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+    font-size: 14px;
+}
+.live-text span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+.live-action {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 44px;
+    text-decoration: none;
 }
 
-.dot.active {
-    width: 24px;
-    border-radius: 5px;
-    background-color: #ffffff;
+/* Destaque */
+.hero-media {
+    margin: 18px 0;
+}
+.hero-video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-lg);
+    background: #000;
 }
 
-/* Games Section */
-.games-section {
-    margin-top: 24px;
-}
-
-.games-section + .games-section {
-    margin-top: 40px;
-}
-
-.games-header {
+.carousel {
     display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar {
+    display: none;
+}
+.carousel-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+}
+.carousel-slide img {
+    width: 100%;
+    aspect-ratio: 3 / 1;
+    border-radius: var(--radius-lg);
+    object-fit: cover;
+}
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--card-border);
+    cursor: pointer;
+    transition: width var(--transition), background var(--transition);
+}
+.carousel-dot.active {
+    width: 22px;
+    background: var(--accent);
+}
+.carousel-dot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/* XP */
+.xp-card {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: var(--component-bg);
+}
+.xp-card header {
+    display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.games-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
     gap: 10px;
+    margin-bottom: 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+.xp-card strong {
+    color: var(--text-main);
+}
+.xp-track {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--card-bg);
+}
+.xp-track span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+    transition: width 0.4s ease;
 }
 
-.title-icon {
-    font-size: 24px;
-    color: var(--color-primary);
+/* Catálogo */
+.games-section {
+    margin-bottom: 30px;
+    scroll-margin-top: 80px;
 }
-
-.games-nav {
+.games-header h2 {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 14px;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
-
-.nav-btn {
-    width: 36px;
-    height: 36px;
-    background-color: #1a1a1a;
-    border: 1px solid #333333;
-    border-radius: 8px;
-    color: #888888;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.nav-btn:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+.games-header :deep(svg) {
+    color: var(--accent);
+    font-size: 19px;
 }
 
 .games-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 14px;
 }
-
 .game-card {
-    background-color: #141414;
-    border-radius: 12px;
+    display: grid;
     overflow: hidden;
-    border: 1px solid #222222;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: linear-gradient(170deg, var(--card-bg), var(--bg-darker));
+    color: var(--text-main);
     text-decoration: none;
-    display: block;
+    transition: transform var(--transition), border-color var(--transition);
 }
-
 .game-card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.2);
+    transform: translateY(-5px);
+    border-color: var(--accent);
+}
+.game-card:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
 }
 
-.game-image {
+.game-cover {
     position: relative;
     aspect-ratio: 3 / 4;
-    overflow: hidden;
-    background-color: #141414;
+    background: var(--component-bg);
 }
-
-.game-image img {
+.game-cover img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    display: block;
+    object-fit: cover;
 }
-
-.card-locked {
-    border-color: #353535;
-}
-
-.card-locked .game-image img {
-    filter: grayscale(35%);
-    transform: scale(1.01);
-}
-
-.locked-dim {
+.game-lock {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0.2) 0%,
-        rgba(0, 0, 0, 0.65) 100%
-    );
-    pointer-events: none;
-}
-
-.lock-badge-corner {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.55);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    backdrop-filter: blur(3px);
-}
-
-.lock-icon-corner {
-    font-size: 16px;
-    color: var(--color-primary);
-}
-
-.game-unlock {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    color: #f7c2da;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.unlock-icon {
-    font-size: 12px;
-    color: var(--color-primary);
+    display: grid;
+    place-items: center;
+    background: rgb(5 6 12 / 62%);
+    color: var(--accent-soft);
+    font-size: 30px;
 }
 
 .game-info {
-    padding: 14px;
+    display: grid;
+    gap: 4px;
+    padding: 11px 12px 13px;
 }
-
-.game-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 4px 0;
+.game-info h3 {
+    font-size: 13px;
+    font-weight: 800;
 }
-
-.game-provider {
+.game-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
     font-size: 11px;
-    color: #888888;
+}
+.game-card.locked .game-tag {
+    color: var(--accent-soft);
+}
+
+/* Conecte-se */
+.connect-section h2 {
+    margin-bottom: 14px;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.connect-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+.connect-card {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 13px;
+    padding: 16px 16px 16px 20px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: var(--component-bg);
+    color: var(--text-main);
+    text-decoration: none;
+    transition: transform var(--transition), border-color var(--transition);
 }
-
-.provider-icon {
-    font-size: 10px;
-    color: var(--color-primary);
-}
-
-/* Permanent Lock (Premium / Claude) */
-.permanent-lock {
+/* Faixa lateral colorida */
+.connect-card::before {
+    content: "";
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: var(--accent);
+}
+.connect-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+}
+.connect-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-size: 21px;
+}
+.connect-text {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+}
+.connect-text small {
+    color: var(--accent-soft);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.connect-text > span {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.connect-arrow {
+    color: var(--text-muted);
+    font-size: 17px;
+}
+
+.responsible {
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(6px);
-    z-index: 2;
+    gap: 8px;
+    margin-top: 28px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: center;
 }
 
-.permanent-lock-icon {
-    font-size: 20px;
-    color: #ffffff;
-}
-
-.premium-lock {
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.95) 0%, rgba(255, 140, 0, 0.95) 100%);
-    box-shadow: 0 4px 14px rgba(255, 140, 0, 0.45);
-}
-
-.claude-lock {
-    background: linear-gradient(135deg, rgba(200, 120, 255, 0.95) 0%, rgba(140, 80, 230, 0.95) 100%);
-    box-shadow: 0 4px 14px rgba(140, 80, 230, 0.45);
-}
-
-.game-unlocked {
-    color: #10b981;
-}
-
-/* Premium cards */
-.card-premium-locked .game-image {
-    background: linear-gradient(135deg, #1a1405 0%, #2a1f08 100%);
-    position: relative;
-}
-
-.card-premium-locked .game-image::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.55) 100%);
-    pointer-events: none;
-}
-
-.card-premium-locked.is-locked .game-image img {
-    opacity: 0.34;
-}
-
-.card-premium-locked:hover {
-    border-color: var(--color-gold);
-    box-shadow: 0 8px 25px rgba(255, 176, 0, 0.25);
-}
-
-.title-icon-premium {
-    color: var(--color-gold);
-}
-
-/* Claude cards */
-.card-claude-locked .game-image {
-    background: linear-gradient(135deg, #14091f 0%, #221035 100%);
-    position: relative;
-}
-
-.card-claude-locked .game-image::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.55) 100%);
-    pointer-events: none;
-}
-
-.card-claude-locked.is-locked .game-image img {
-    opacity: 0.34;
-}
-
-.card-claude-locked:hover {
-    border-color: var(--color-fire);
-    box-shadow: 0 8px 25px rgba(200, 120, 255, 0.25);
-}
-
-.title-icon-claude {
-    color: var(--color-fire);
-}
-
-.game-unlock {
-    color: #888888;
-}
-
-/* Links Úteis */
-.links-section {
-    margin-top: 40px;
-}
-
-.section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--color-primary);
-    margin: 0 0 16px 0;
-}
-
-.links-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-}
-
-.link-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
-    background-color: #141414;
-    border: 1px solid #222222;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-}
-
-.link-card:hover {
-    border-color: var(--color-primary);
-    background-color: #1a1a1a;
-}
-
-.link-card.link-active {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #00aa44 100%);
-    border-color: transparent;
-}
-
-.link-card.link-active .link-icon,
-.link-card.link-active .link-text {
-    color: #000000;
-}
-
-.link-icon {
-    font-size: 20px;
-    color: var(--color-primary);
-}
-
-.link-text {
-    font-size: 14px;
-    font-weight: 500;
-    color: #ffffff;
-}
-
-/* Destaques */
-.highlights-section {
-    margin-top: 40px;
-}
-
-.highlights-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.highlights-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
-}
-
-.highlight-card {
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #222222;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: block;
-}
-
-.highlight-card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.2);
-}
-
-.highlight-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-    .main-content {
+@media (max-width: 720px) {
+    .home-hero {
         flex-direction: column;
+        align-items: stretch;
     }
-
-    .home-aside {
+    .hero-balance {
         width: 100%;
-        order: 2;
     }
-
-    .center-content {
-        order: 1;
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
+}
 
-    .banner-content h1 {
-        font-size: 36px;
+@media (max-width: 380px) {
+    .shortcut {
+        width: 64px;
     }
-
-    .banner-content h2 {
+    .shortcut-icon {
+        width: 52px;
+        height: 52px;
         font-size: 20px;
     }
 }
 
-@media (max-width: 640px) {
-    .header {
-        padding: 12px 16px;
+@media (prefers-reduced-motion: reduce) {
+    .game-card:hover,
+    .connect-card:hover,
+    .hero-balance:hover,
+    .shortcut:hover .shortcut-icon {
+        transform: none;
     }
-
-    .header-logo {
-        height: 42px;
-    }
-
-    .header-right {
-        gap: 10px;
-    }
-
-    .balance {
-        padding: 8px 12px;
-    }
-
-    .btn-deposit {
-        padding: 10px 16px;
-        font-size: 12px;
-    }
-
-    .main-content {
-        padding: 16px;
-    }
-
-    .carousel-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
-    }
-
-    .carousel-btn.prev {
-        left: 8px;
-    }
-
-    .carousel-btn.next {
-        right: 8px;
-    }
-
-    .games-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .links-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .link-card {
-        padding: 12px 14px;
-    }
-
-    .link-text {
-        font-size: 12px;
-    }
-
-    .highlights-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .xp-track span {
+        transition: none;
     }
 }
-
-/* Grupo VIP Modal */
-.grupo-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 20px;
-}
-
-.grupo-modal {
-    position: relative;
-    max-width: 500px;
-    width: 100%;
-    border-radius: 16px;
-    overflow: hidden;
-    animation: modalIn 0.3s ease;
-}
-
-@keyframes modalIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.grupo-modal-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
-    background: rgba(0, 0, 0, 0.6);
-    border: none;
-    border-radius: 50%;
-    color: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    z-index: 10;
-    transition: background 0.2s;
-}
-
-.grupo-modal-close:hover {
-    background: rgba(0, 0, 0, 0.8);
-}
-
-.grupo-banner-link {
-    display: block;
-    width: 100%;
-}
-
-.grupo-banner-img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 16px;
-}
-.is-managed-locked { cursor: not-allowed; }
 </style>

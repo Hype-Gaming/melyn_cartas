@@ -36,6 +36,10 @@ export const useVisualConfig = () => {
     }
     const rgb = toRgbTriplet(next.theme.colorPrimary)
     if (rgb) document.documentElement.style.setProperty('--color-primary-rgb', rgb)
+
+    // Aliases semânticos usados pelas telas novas (home, roleta, torneio).
+    document.documentElement.style.setProperty('--accent', next.theme.colorPrimary)
+    document.documentElement.style.setProperty('--accent-soft', next.theme.colorSecondary)
   }
 
   const loadAppConfig = async (force = false): Promise<AppConfig> => {
