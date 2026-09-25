@@ -1,52 +1,90 @@
 <template>
   <div class="roulette">
-    <div class="roulette-stage">
-      <div class="roulette-pointer" aria-hidden="true"></div>
+    <div class="roulette-stage" :class="{ spinning }">
+      <!-- Brilho ambiente atrás da roda, puramente decorativo. -->
+      <div class="stage-glow" aria-hidden="true"></div>
+
+      <div class="roulette-pointer" aria-hidden="true">
+        <svg viewBox="0 0 28 30" width="26" height="28">
+          <path d="M14 29 L4 5 L24 5 Z" fill="var(--accent-soft)" />
+        </svg>
+      </div>
 
       <svg
         class="roulette-wheel"
-        viewBox="0 0 200 200"
+        viewBox="0 0 220 220"
         :style="{ transform: `rotate(${rotation}deg)` }"
         role="img"
         :aria-label="`Roleta com ${prizes.length} prêmios`"
       >
         <defs>
-          <filter id="wheel-glow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
+          <radialGradient v-for="(prize, index) in prizes" :id="`slice-${index}`" :key="`grad-${index}`" cx="50%" cy="50%" r="50%">
+            <stop offset="55%" :stop-color="prize.color" stop-opacity="0.82" />
+            <stop offset="100%" :stop-color="prize.color" />
+          </radialGradient>
+
+          <filter id="rim-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
         <g v-for="(prize, index) in prizes" :key="index">
-          <path :d="slicePath(index)" :fill="prize.color" stroke="var(--bg-darker)" stroke-width="0.8" />
+          <path :d="slicePath(index)" :fill="`url(#slice-${index})`" stroke="rgb(0 0 0 / 35%)" stroke-width="0.6" />
           <text
             :transform="labelTransform(index)"
-            fill="#fff"
-            font-size="7.5"
+            :fill="prize.spins > 0 ? '#fff' : 'rgb(255 255 255 / 55%)'"
+            font-size="8"
             font-weight="800"
+            letter-spacing="0.2"
             text-anchor="middle"
             dominant-baseline="middle"
           >{{ shortLabel(prize.label) }}</text>
         </g>
 
-        <circle cx="100" cy="100" r="96" fill="none" stroke="var(--accent)" stroke-width="3" filter="url(#wheel-glow)" />
-        <circle cx="100" cy="100" r="16" fill="var(--bg-darker)" stroke="var(--accent)" stroke-width="2.5" />
+        <!-- Aro externo com as luzinhas de cassino. -->
+        <circle cx="110" cy="110" r="104" fill="none" stroke="var(--accent)" stroke-width="3.5" filter="url(#rim-glow)" />
+        <circle cx="110" cy="110" r="97" fill="none" stroke="rgb(0 0 0 / 45%)" stroke-width="5" />
+        <circle
+          v-for="bulb in bulbs"
+          :key="`bulb-${bulb.index}`"
+          :cx="bulb.x"
+          :cy="bulb.y"
+          r="2.4"
+          :fill="bulb.index % 2 === 0 ? 'var(--accent-soft)' : '#fff'"
+          :opacity="bulb.index % 2 === 0 ? 0.95 : 0.5"
+        />
+
+        <circle cx="110" cy="110" r="22" fill="var(--bg-darker)" stroke="var(--accent)" stroke-width="3" />
+        <circle cx="110" cy="110" r="14" fill="none" stroke="var(--accent-soft)" stroke-width="1" opacity="0.5" />
       </svg>
+
+      <span class="roulette-hub" aria-hidden="true"><Icon name="ph:sparkle-fill" /></span>
     </div>
+
+    <!-- Legenda: o que cada cor vale, legível sem girar a cabeça. -->
+    <ul class="prize-legend">
+      <li v-for="(prize, index) in legend" :key="index">
+        <span class="legend-dot" :style="{ background: prize.color }"></span>
+        {{ prize.label }}
+      </li>
+    </ul>
 
     <p v-if="!loggedIn" class="roulette-note">Entre na sua conta para usar o giro diário.</p>
     <p v-else-if="error" class="roulette-note error" role="alert">{{ error }}</p>
     <p v-else-if="!available && !result" class="roulette-note">
-      Seu giro de hoje já foi usado. Volte amanhã!
+      <Icon name="ph:clock-countdown-bold" aria-hidden="true" />
+      Próximo giro em {{ nextSpinIn }}
     </p>
 
     <button
       type="button"
       class="roulette-button"
+      :class="{ ready: loggedIn && available && !spinning }"
       :disabled="spinning || !loggedIn || !available"
       @click="spin"
     >
-      <Icon name="ph:spinner-ball-bold" />
+      <Icon :name="spinning ? 'ph:circle-notch-bold' : 'ph:spinner-ball-bold'" :class="{ turning: spinning }" />
       {{ spinning ? "Girando..." : available ? "Girar agora" : "Volte amanhã" }}
     </button>
 
@@ -117,22 +155,40 @@ const confettiPieces = Array.from({ length: 24 }, (_, index) => ({
     },
 }));
 
-// Fatia em coordenadas SVG: centro 100,100 e raio 94.
+// Coordenadas SVG: centro 110,110 e raio 94 (o aro ocupa o resto).
+const CENTER = 110;
+const RADIUS = 94;
+
 const slicePath = (index: number) => {
     const start = ((index * slice - 90) * Math.PI) / 180;
     const end = (((index + 1) * slice - 90) * Math.PI) / 180;
-    const x1 = 100 + 94 * Math.cos(start);
-    const y1 = 100 + 94 * Math.sin(start);
-    const x2 = 100 + 94 * Math.cos(end);
-    const y2 = 100 + 94 * Math.sin(end);
-    return `M100 100 L${x1.toFixed(2)} ${y1.toFixed(2)} A94 94 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+    const x1 = CENTER + RADIUS * Math.cos(start);
+    const y1 = CENTER + RADIUS * Math.sin(start);
+    const x2 = CENTER + RADIUS * Math.cos(end);
+    const y2 = CENTER + RADIUS * Math.sin(end);
+    return `M${CENTER} ${CENTER} L${x1.toFixed(2)} ${y1.toFixed(2)} A${RADIUS} ${RADIUS} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
 };
+
+// Luzinhas do aro, como as de uma roda de cassino.
+const bulbs = Array.from({ length: 24 }, (_, index) => {
+    const radians = ((index * (360 / 24) - 90) * Math.PI) / 180;
+    return {
+        index,
+        x: (CENTER + 100.5 * Math.cos(radians)).toFixed(2),
+        y: (CENTER + 100.5 * Math.sin(radians)).toFixed(2)
+    };
+});
+
+// Legenda sem repetir "Não foi dessa vez" uma vez por fatia.
+const legend = prizes.filter(
+    (prize, index) => prizes.findIndex((other) => other.label === prize.label) === index,
+);
 
 const labelTransform = (index: number) => {
     const angle = index * slice + slice / 2 - 90;
     const radians = (angle * Math.PI) / 180;
-    const x = 100 + 62 * Math.cos(radians);
-    const y = 100 + 62 * Math.sin(radians);
+    const x = CENTER + 66 * Math.cos(radians);
+    const y = CENTER + 66 * Math.sin(radians);
     // Na metade de baixo da roda o texto sairia de cabeça para baixo: gira 180°.
     const upsideDown = angle > 0 && angle < 180;
     const rotation = angle + (upsideDown ? -90 : 90);
@@ -140,6 +196,27 @@ const labelTransform = (index: number) => {
 };
 
 const shortLabel = (label: string) => (label === "Não foi dessa vez" ? "Quase!" : label.replace(" grátis", ""));
+
+// O giro renova à meia-noite de Brasília: a contagem usa esse mesmo fuso.
+const nextSpinIn = ref("00:00");
+let countdown: ReturnType<typeof setInterval> | null = null;
+
+const updateCountdown = () => {
+    const agora = new Date();
+    const brasilia = new Date(agora.toLocaleString("en-US", { timeZone: "America/Bahia" }));
+    const faltam = 86_400_000 - (brasilia.getHours() * 3600 + brasilia.getMinutes() * 60 + brasilia.getSeconds()) * 1000;
+    const horas = Math.floor(faltam / 3_600_000);
+    const minutos = Math.floor((faltam % 3_600_000) / 60_000);
+    nextSpinIn.value = `${String(horas).padStart(2, "0")}h${String(minutos).padStart(2, "0")}`;
+};
+
+onMounted(() => {
+    updateCountdown();
+    countdown = setInterval(updateCountdown, 30_000);
+});
+onUnmounted(() => {
+    if (countdown) clearInterval(countdown);
+});
 
 const loadStatus = async () => {
     if (!loggedIn.value) return;
@@ -199,32 +276,99 @@ watch(loggedIn, loadStatus, { immediate: true });
 
 .roulette-stage {
     position: relative;
-    width: min(320px, 82vw);
+    width: min(330px, 84vw);
     aspect-ratio: 1;
 }
 
+/* Halo atrás da roda: dá profundidade sem pesar no render. */
+.stage-glow {
+    position: absolute;
+    inset: -14%;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--accent) 34%, transparent) 0%,
+        transparent 68%
+    );
+    filter: blur(14px);
+    opacity: 0.75;
+    transition: opacity 0.4s ease;
+}
+.roulette-stage.spinning .stage-glow {
+    opacity: 1;
+    animation: glow-pulse 1.4s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+    50% {
+        transform: scale(1.06);
+    }
+}
+
 .roulette-wheel {
+    position: relative;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 18px 50px rgb(0 0 0 / 45%));
-    transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    filter: drop-shadow(0 22px 55px rgb(0 0 0 / 55%));
+    /* Desacelera no fim como uma roda de verdade. */
+    transition: transform 4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Cubo central sobreposto: o ícone não gira junto com a roda. */
+.roulette-hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 17%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    color: var(--accent-soft);
+    font-size: clamp(16px, 5vw, 21px);
+    pointer-events: none;
 }
 
 .roulette-pointer {
     position: absolute;
-    top: -6px;
+    top: -12px;
     left: 50%;
     z-index: 2;
-    width: 0;
-    height: 0;
-    margin-left: -13px;
-    border-left: 13px solid transparent;
-    border-right: 13px solid transparent;
-    border-top: 26px solid var(--accent);
-    filter: drop-shadow(0 3px 5px rgb(0 0 0 / 60%));
+    transform: translateX(-50%);
+    filter: drop-shadow(0 4px 8px rgb(0 0 0 / 70%));
+}
+
+/* Legenda dos prêmios */
+.prize-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.prize-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--component-bg) 70%, transparent);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+.legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
 }
 
 .roulette-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     color: var(--text-muted);
     font-size: 14px;
     text-align: center;
@@ -253,6 +397,23 @@ watch(loggedIn, loadStatus, { immediate: true });
 .roulette-button:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+/* Chamada de atenção enquanto o giro do dia está disponível. */
+.roulette-button.ready {
+    animation: button-breathe 2.6s ease-in-out infinite;
+}
+@keyframes button-breathe {
+    50% {
+        box-shadow: 0 10px 34px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+}
+.roulette-button :deep(svg.turning) {
+    animation: turning 1s linear infinite;
+}
+@keyframes turning {
+    to {
+        transform: rotate(360deg);
+    }
 }
 .roulette-button:disabled {
     opacity: 0.55;
@@ -350,6 +511,11 @@ watch(loggedIn, loadStatus, { immediate: true });
     }
     .confetti {
         display: none;
+    }
+    .roulette-button.ready,
+    .roulette-stage.spinning .stage-glow,
+    .roulette-button :deep(svg.turning) {
+        animation: none;
     }
 }
 </style>

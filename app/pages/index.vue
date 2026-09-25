@@ -1,20 +1,5 @@
 <template>
   <div class="home">
-    <!-- Boas-vindas e saldo -->
-    <section class="home-hero">
-      <div class="hero-text">
-        <p class="eyebrow">Área de membros</p>
-        <h1>Olá, {{ firstName }}</h1>
-        <p class="hero-copy">Seu conteúdo, benefícios e comunidade em um só lugar.</p>
-      </div>
-
-      <button type="button" class="hero-balance" @click="openWallet">
-        <Icon name="ph:wallet-bold" aria-hidden="true" />
-        <span>Seu saldo<strong>{{ formattedBalance }}</strong></span>
-        <Icon name="ph:caret-right-bold" aria-hidden="true" />
-      </button>
-    </section>
-
     <!-- Atalhos -->
     <nav v-if="shortcuts.length" class="shortcuts" aria-label="Atalhos">
       <template v-for="(shortcut, index) in shortcuts" :key="`${shortcut.href}-${index}`">
@@ -187,18 +172,13 @@ import { videoUrl } from "../../shared/videos";
 
 definePageMeta({ layout: "default" });
 
-const { user, isAuthenticated, formattedBalance, fetchUserProfile } = useAuth();
+const { user, isAuthenticated, fetchUserProfile } = useAuth();
 const { isSubscribed, init: initSubscription } = useSubscription();
 const { config: appConfig, resolveAssetUrl } = useVisualConfig();
 const { config: homeConfigState, load: loadHomeConfig } = useHomeConfig();
-const { openWallet } = useWalletModal();
 const intro = useIntroVideo();
 
 const homeConfig = homeConfigState;
-
-const firstName = computed(
-    () => user.value?.first_name || user.value?.name?.split(" ")[0] || "membro",
-);
 
 const checkoutUrl = computed(() => appConfig.value.links.checkout || CHECKOUT_URLS.main);
 
@@ -343,12 +323,17 @@ onMounted(async () => {
 
     await intro.autoOpen();
 
-    // O convite da roleta não disputa a tela com o vídeo de boas-vindas.
-    if (isAuthenticated.value && !intro.open.value && !sessionStorage.getItem("roulette_invite_seen")) {
-        const available = await $fetch<{ available: boolean }>("/api/track/roulette", {
-            params: { email: user.value?.email || "" },
-        }).catch(() => null);
-        if (available?.available) {
+    // Convite da roleta: uma vez por sessão, sem disputar a tela com o vídeo.
+    if (!intro.open.value && !sessionStorage.getItem("roulette_invite_seen")) {
+        // Logado: só convida se o giro do dia ainda estiver disponível.
+        // Visitante: convida mesmo assim — a página da roleta pede o login.
+        const spin = isAuthenticated.value
+            ? await $fetch<{ available: boolean }>("/api/track/roulette", {
+                  params: { email: user.value?.email || "" },
+              }).catch(() => null)
+            : { available: true };
+
+        if (spin?.available) {
             setTimeout(() => (showRouletteInvite.value = true), 900);
         }
     }
@@ -379,62 +364,6 @@ useHead({ title: () => appConfig.value.brand.name });
     font-weight: 900;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-}
-
-/* Boas-vindas */
-.home-hero {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 22px;
-    padding: clamp(18px, 4vw, 26px);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-lg);
-    background: linear-gradient(125deg, color-mix(in srgb, var(--accent) 13%, var(--card-bg)), var(--card-bg));
-    box-shadow: 0 16px 45px rgb(0 0 0 / 22%);
-}
-.home-hero h1 {
-    margin: 5px 0;
-    font-size: clamp(24px, 4vw, 34px);
-}
-.hero-copy {
-    color: var(--text-muted);
-    font-size: 14px;
-}
-
-.hero-balance {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 200px;
-    min-height: 56px;
-    padding: 12px 15px;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--component-bg) 86%, transparent);
-    color: var(--text-main);
-    font: inherit;
-    cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition);
-}
-.hero-balance:hover {
-    transform: translateY(-3px);
-    border-color: var(--accent);
-}
-.hero-balance :deep(svg):first-child {
-    color: var(--accent);
-    font-size: 22px;
-}
-.hero-balance span {
-    display: grid;
-    flex: 1;
-    color: var(--text-muted);
-    font-size: 11px;
-    text-align: left;
-}
-.hero-balance strong {
-    color: var(--text-main);
-    font-size: 16px;
 }
 
 /* Atalhos */
@@ -786,13 +715,6 @@ useHead({ title: () => appConfig.value.brand.name });
 }
 
 @media (max-width: 720px) {
-    .home-hero {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .hero-balance {
-        width: 100%;
-    }
     .games-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -812,7 +734,6 @@ useHead({ title: () => appConfig.value.brand.name });
 @media (prefers-reduced-motion: reduce) {
     .game-card:hover,
     .connect-card:hover,
-    .hero-balance:hover,
     .shortcut:hover .shortcut-icon {
         transform: none;
     }
