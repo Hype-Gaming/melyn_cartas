@@ -1,8 +1,8 @@
 <template>
   <nav class="app-nav" aria-label="Navegação principal">
-    <NuxtLink v-for="item in items" :key="item.key" :to="routeFor(item.key)" class="app-nav-item" :class="{ active: isActive(item.key) }">
+    <NuxtLink v-for="item in items" :key="item.key" :to="routeFor(item.key)" class="app-nav-item" :class="{ active: isActive(item.key) }" :title="item.label">
       <Icon :name="item.icon" aria-hidden="true" />
-      <span>{{ item.label }}</span>
+      <span class="nav-text">{{ item.label }}</span>
     </NuxtLink>
   </nav>
 </template>

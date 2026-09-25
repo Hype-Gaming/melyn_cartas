@@ -1,8 +1,19 @@
 <template>
   <Teleport to="body"><button v-if="open" class="sidebar-overlay" type="button" aria-label="Fechar navegação" @click="closeDrawer" /></Teleport>
-  <aside class="app-sidebar" :class="{ open }" aria-label="Barra lateral">
+  <aside class="app-sidebar" :class="{ open, collapsed }" aria-label="Barra lateral">
     <div class="brand-block">
       <img :src="sidebarLogo" :alt="config.brand.name" @error="useFallbackLogo" />
+      <!-- Recolher é só no desktop; no celular a barra já é um drawer. -->
+      <button
+        type="button"
+        class="collapse-button"
+        :aria-label="collapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'"
+        :aria-expanded="!collapsed"
+        :title="collapsed ? 'Expandir' : 'Recolher'"
+        @click="toggleCollapse"
+      >
+        <Icon :name="collapsed ? 'ph:caret-right-bold' : 'ph:caret-left-bold'" />
+      </button>
     </div>
 
     <template v-if="isAuthenticated">
@@ -22,11 +33,11 @@
         <button type="button" @click="openModal"><span>Depositar</span><span class="pix-badge">PIX</span></button>
       </section>
     </template>
-    <NuxtLink v-else to="/auth/login" class="login-cta"><Icon name="ph:sign-in-bold" /> Entrar na conta</NuxtLink>
+    <NuxtLink v-else to="/auth/login" class="login-cta"><Icon name="ph:sign-in-bold" /> <span class="btn-text">Entrar na conta</span></NuxtLink>
 
     <div class="nav-section"><span class="nav-label">NAVEGAÇÃO</span><AppNavList /></div>
     <div v-if="isAuthenticated" class="sidebar-footer">
-      <button type="button" class="logout-button" @click="logout('/')"><Icon name="ph:sign-out-bold" /> Sair</button>
+      <button type="button" class="logout-button" @click="logout('/')"><Icon name="ph:sign-out-bold" /> <span class="btn-text">Sair</span></button>
     </div>
   </aside>
 </template>
@@ -35,7 +46,7 @@
 const { config, resolveAssetUrl } = useVisualConfig()
 const { user, isAuthenticated, formattedBalance, profileLoading, fetchUserProfile, logout } = useAuth()
 const { openModal } = useDeposit()
-const { open, closeDrawer } = useSidebarDrawer()
+const { open, collapsed, closeDrawer, toggleCollapse } = useSidebarDrawer()
 const fallbackLogo = '/media/melyn-logo.svg'
 const sidebarLogo = ref(resolveAssetUrl(config.value.brand.logo) || fallbackLogo)
 watch(() => config.value.brand.logo, value => { sidebarLogo.value = resolveAssetUrl(value) || fallbackLogo })
@@ -79,6 +90,29 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--color-primary);
 .spinning { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .45; } }
+
+/* --- Estado recolhido (desktop) --- */
+.app-sidebar { transition: width .28s cubic-bezier(.16, 1, .3, 1); }
+.brand-block { position: relative; }
+.collapse-button { position: absolute; top: 0; right: -6px; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--card-border); border-radius: 9px; background: var(--card-bg); color: var(--text-muted); cursor: pointer; }
+.collapse-button:hover { color: var(--text-main); border-color: var(--color-primary); }
+.app-sidebar.collapsed { width: 88px; padding: 24px 14px; }
+.app-sidebar.collapsed .brand-block img { max-width: 44px; }
+.app-sidebar.collapsed .collapse-button { position: static; margin-top: 10px; }
+.app-sidebar.collapsed .brand-block { display: grid; justify-items: center; }
+/* Recolhida, sobram só os ícones da navegação. */
+.app-sidebar.collapsed .user-card,
+.app-sidebar.collapsed .balance-card,
+.app-sidebar.collapsed .nav-label,
+.app-sidebar.collapsed .btn-text { display: none; }
+.app-sidebar.collapsed .logout-button { justify-content: center; padding: 0; }
+.app-sidebar.collapsed :deep(.app-nav-item) { justify-content: center; padding: 0; }
+.app-sidebar.collapsed :deep(.nav-text) { display: none; }
+.app-sidebar.collapsed :deep(.app-nav-item:hover) { transform: none; }
+.app-sidebar.collapsed :deep(.app-nav-item.active) { border-left: 0; border-radius: 11px; }
+/* No celular a barra é drawer: nunca recolhe. */
+@media (max-width: 900px) { .collapse-button { display: none; } .app-sidebar.collapsed { width: min(300px, 86vw); padding: 24px; } .app-sidebar.collapsed .user-card, .app-sidebar.collapsed .balance-card, .app-sidebar.collapsed .nav-label, .app-sidebar.collapsed :deep(.nav-text), .app-sidebar.collapsed .btn-text { display: revert; } .app-sidebar.collapsed :deep(.app-nav-item) { justify-content: flex-start; padding: 0 14px; } }
+
 @media (max-width: 900px) { .app-sidebar { transform: translateX(-105%); box-shadow: 20px 0 60px color-mix(in srgb, var(--bg-darker) 70%, transparent); transition: transform .32s cubic-bezier(.16, 1, .3, 1); } .app-sidebar.open { transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) { button, a, .app-sidebar { transition: none; } .logout-button:hover { transform: none; } .spinning, .balance-skeleton { animation: none; } }
 </style>
