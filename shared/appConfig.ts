@@ -134,26 +134,6 @@ export interface AppConfig {
   }
   menu: Array<{ key: string; label: string; icon: string; order: number }>
   maintenance: { active: boolean; title: string; message: string }
-  memberExperience: {
-    shortcuts: Array<{ id: string; label: string; icon: string; href: string }>
-    communityTitle: string
-    communityMessage: string
-    campaign: {
-      enabled: boolean
-      title: string
-      message: string
-      imageUrl: string | null
-      ctaLabel: string
-      ctaUrl: string
-    }
-    wheel: {
-      enabled: boolean
-      title: string
-      message: string
-      supportUrl: string
-      prizes: Array<{ id: string; label: string; color: string; weight: number }>
-    }
-  }
   notificationPrompt: {
     enabled: boolean
     title: string
@@ -246,36 +226,6 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     active: false,
     title: 'Em manutenção',
     message: 'Estamos realizando melhorias. Voltamos em breve.'
-  },
-  memberExperience: {
-    shortcuts: [
-      { id: 'games', label: 'Jogos', icon: 'ph:game-controller-bold', href: '/#jogos' },
-      { id: 'wheel', label: 'Roleta diária', icon: 'ph:spinner-ball-bold', href: '#roleta' },
-      { id: 'tournaments', label: 'Torneios', icon: 'ph:trophy-bold', href: '/torneios' },
-      { id: 'community', label: 'Comunidade', icon: 'ph:users-three-bold', href: '/links' }
-    ],
-    communityTitle: 'Faça parte da comunidade',
-    communityMessage: 'Conteúdo, novidades e suporte em um só lugar.',
-    campaign: {
-      enabled: false,
-      title: 'Novidade para membros',
-      message: 'Confira a campanha especial disponível por tempo limitado.',
-      imageUrl: null,
-      ctaLabel: 'Quero participar',
-      ctaUrl: ''
-    },
-    wheel: {
-      enabled: true,
-      title: 'Roleta diária',
-      message: 'Gire uma vez por dia e descubra seu prêmio.',
-      supportUrl: '',
-      prizes: [
-        { id: 'bonus-5', label: 'Bônus 5', color: '#8b7cf6', weight: 35 },
-        { id: 'bonus-10', label: 'Bônus 10', color: '#d9b76e', weight: 25 },
-        { id: 'try-again', label: 'Quase!', color: '#292d45', weight: 35 },
-        { id: 'vip', label: 'Prêmio VIP', color: '#ef6a86', weight: 5 }
-      ]
-    }
   },
   notificationPrompt: {
     enabled: true,

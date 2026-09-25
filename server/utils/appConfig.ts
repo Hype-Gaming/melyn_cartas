@@ -88,39 +88,6 @@ export const normalizeAppConfig = (input: unknown): AppConfig => {
   config.maintenance.title = text(source.maintenance?.title, defaults.maintenance.title, 120) || defaults.maintenance.title
   config.maintenance.message = text(source.maintenance?.message, defaults.maintenance.message, 500) || defaults.maintenance.message
 
-  const member = source.memberExperience || {}
-  config.memberExperience.shortcuts = Array.isArray(member.shortcuts)
-    ? member.shortcuts.slice(0, 8).map((item: any, index: number) => ({
-        id: text(item?.id, `shortcut-${index + 1}`, 50).replace(/[^a-z0-9_-]/gi, ''),
-        label: text(item?.label, `Atalho ${index + 1}`, 60),
-        icon: text(item?.icon, 'ph:star-bold', 100),
-        href: url(item?.href, '#')
-      })).filter((item: any) => item.id && item.label)
-    : defaults.memberExperience.shortcuts
-  config.memberExperience.communityTitle = text(member.communityTitle, defaults.memberExperience.communityTitle, 120)
-  config.memberExperience.communityMessage = text(member.communityMessage, defaults.memberExperience.communityMessage, 300)
-  config.memberExperience.campaign = {
-    enabled: bool(member.campaign?.enabled, defaults.memberExperience.campaign.enabled),
-    title: text(member.campaign?.title, defaults.memberExperience.campaign.title, 120),
-    message: text(member.campaign?.message, defaults.memberExperience.campaign.message, 500),
-    imageUrl: nullableAsset(member.campaign?.imageUrl, defaults.memberExperience.campaign.imageUrl),
-    ctaLabel: text(member.campaign?.ctaLabel, defaults.memberExperience.campaign.ctaLabel, 60),
-    ctaUrl: url(member.campaign?.ctaUrl, defaults.memberExperience.campaign.ctaUrl)
-  }
-  const rawPrizes = Array.isArray(member.wheel?.prizes) ? member.wheel.prizes : defaults.memberExperience.wheel.prizes
-  config.memberExperience.wheel = {
-    enabled: bool(member.wheel?.enabled, defaults.memberExperience.wheel.enabled),
-    title: text(member.wheel?.title, defaults.memberExperience.wheel.title, 120),
-    message: text(member.wheel?.message, defaults.memberExperience.wheel.message, 300),
-    supportUrl: url(member.wheel?.supportUrl, defaults.memberExperience.wheel.supportUrl),
-    prizes: rawPrizes.slice(0, 12).map((prize: any, index: number) => ({
-      id: text(prize?.id, `prize-${index + 1}`, 50).replace(/[^a-z0-9_-]/gi, ''),
-      label: text(prize?.label, `Prêmio ${index + 1}`, 60),
-      color: color(prize?.color, defaults.theme.colorPrimary),
-      weight: number(prize?.weight, 1, 0, 10_000)
-    })).filter((prize: any) => prize.id && prize.label)
-  }
-
   config.notificationPrompt = {
     enabled: bool(source.notificationPrompt?.enabled, defaults.notificationPrompt.enabled),
     title: text(source.notificationPrompt?.title, defaults.notificationPrompt.title, 120),
@@ -218,7 +185,7 @@ export const saveAppConfig = async (input: unknown): Promise<AppConfig> => {
   const merged = cloneDefaultAppConfig() as Record<string, any>
   const existing = current || {}
 
-  for (const group of ['brand', 'theme', 'content', 'images', 'links', 'features', 'maintenance', 'memberExperience', 'notificationPrompt', 'signalBalanceGate']) {
+  for (const group of ['brand', 'theme', 'content', 'images', 'links', 'features', 'maintenance', 'notificationPrompt', 'signalBalanceGate']) {
     merged[group] = { ...merged[group], ...(existing as any)[group], ...(patch as any)[group] }
   }
   merged.menu = Array.isArray(patch.menu)

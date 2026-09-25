@@ -7,6 +7,9 @@ export default defineEventHandler((event) => {
   const scriptSrc = ["'self'", "'unsafe-inline'", turnstile, ...(isDev ? ["'unsafe-eval'"] : [])]
   const connectSrc = ["'self'", ...brandApis, turnstile, 'https:', 'wss:', 'ws:']
   const imgSrc = ["'self'", 'data:', 'blob:', 'https:', turnstile]
+  // O vídeo de boas-vindas mora num bucket externo; sem media-src o default-src
+  // 'self' bloqueia o arquivo e o pop-up nunca reproduz.
+  const mediaSrc = ["'self'", 'data:', 'blob:', 'https:']
 
   setHeaders(event, {
     'X-Content-Type-Options': 'nosniff',
@@ -19,6 +22,7 @@ export default defineEventHandler((event) => {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       `img-src ${imgSrc.join(' ')}`,
+      `media-src ${mediaSrc.join(' ')}`,
       `connect-src ${connectSrc.join(' ')}`,
       'frame-src https:',
       "base-uri 'self'",
