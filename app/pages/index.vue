@@ -4,6 +4,15 @@
         <div class="main-content">
             <!-- Center Content -->
             <div class="center-content">
+                <section class="member-hero">
+                    <div><span>Área de membros</span><h1>Olá, {{ user?.first_name || user?.name?.split(' ')[0] || 'membro' }}</h1><p>Seu conteúdo, benefícios e comunidade em um só lugar.</p></div>
+                    <NuxtLink to="/perfil" class="member-summary"><Icon name="ph:wallet-bold" /><span>Seu saldo<strong>{{ formattedBalance }}</strong></span><Icon name="ph:caret-right-bold" /></NuxtLink>
+                </section>
+                <nav class="member-shortcuts" aria-label="Atalhos principais">
+                    <component :is="shortcut.href === '#roleta' ? 'button' : resolveNuxtLink" v-for="shortcut in appConfig.memberExperience.shortcuts" :key="shortcut.id" :to="shortcut.href === '#roleta' ? undefined : shortcut.href" type="button" @click="shortcut.href === '#roleta' && (showWheel = true)">
+                        <span><Icon :name="shortcut.icon" /></span>{{ shortcut.label }}
+                    </component>
+                </nav>
                 <!-- Banner Carousel -->
                 <div class="banner-carousel">
                     <button class="carousel-btn prev" @click="prevBanner">
@@ -267,6 +276,8 @@
                 </div>
             </div>
         </Teleport>
+        <DailyWheelModal :open="showWheel" :config="appConfig.memberExperience.wheel" @close="showWheel = false" />
+        <CampaignModal :open="showCampaign" :campaign="appConfig.memberExperience.campaign" @close="closeCampaign" />
     </div>
 </template>
 
@@ -287,6 +298,13 @@ const {
 } = useSubscription();
 
 const { config: appConfig, resolveAssetUrl } = useVisualConfig();
+const resolveNuxtLink = resolveComponent('NuxtLink');
+const showWheel = ref(false);
+const showCampaign = ref(false);
+const closeCampaign = () => {
+    showCampaign.value = false;
+    sessionStorage.setItem('member_campaign_seen', '1');
+};
 
 // Links e textos vêm do painel /admin/visual; os valores do código são o fallback.
 const checkoutUrl = computed(
@@ -320,6 +338,9 @@ onMounted(() => {
 
     window.addEventListener("focus", handleWindowFocus);
     window.addEventListener("pageshow", handleWindowFocus);
+    if (appConfig.value.memberExperience.campaign.enabled && !sessionStorage.getItem('member_campaign_seen')) {
+        window.setTimeout(() => { showCampaign.value = true; }, 700);
+    }
 });
 
 const banners = computed(() =>
@@ -605,6 +626,12 @@ const highlights = ref([
     background-color: #0a0a0a;
     color: #ffffff;
 }
+
+.member-hero { display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:22px;padding:24px;border:1px solid var(--card-border);border-radius:20px;background:linear-gradient(125deg,color-mix(in srgb,var(--color-primary) 13%,var(--card-bg)),var(--card-bg));box-shadow:0 16px 45px #0003; }
+.member-hero>div>span { color:var(--color-secondary);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase; }.member-hero h1{margin:5px 0;font-size:clamp(25px,4vw,36px)}.member-hero p{color:var(--text-muted)}
+.member-summary{display:flex;align-items:center;gap:12px;min-width:190px;padding:13px 15px;border:1px solid var(--card-border);border-radius:14px;background:color-mix(in srgb,var(--component-bg) 86%,transparent);color:var(--text-main);text-decoration:none}.member-summary>svg{color:var(--color-primary);font-size:22px}.member-summary span{display:grid;flex:1;color:var(--text-muted);font-size:11px}.member-summary strong{color:var(--text-main);font-size:15px}
+.member-shortcuts{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.member-shortcuts a,.member-shortcuts button{display:grid;justify-items:center;gap:9px;padding:8px;border:0;background:none;color:var(--text-muted);font:inherit;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer}.member-shortcuts span{display:grid;place-items:center;width:58px;height:58px;border:1px solid color-mix(in srgb,var(--color-primary) 25%,var(--card-border));border-radius:50%;background:linear-gradient(145deg,var(--component-bg),var(--card-bg));color:var(--color-primary);font-size:23px;box-shadow:0 10px 24px #0004}.member-shortcuts a:hover span,.member-shortcuts button:hover span{transform:translateY(-2px);border-color:var(--color-primary)}
+@media(max-width:600px){.member-hero{align-items:stretch;flex-direction:column}.member-summary{width:100%}.member-shortcuts{gap:5px}.member-shortcuts a,.member-shortcuts button{font-size:10px}.member-shortcuts span{width:50px;height:50px}}
 
 /* Header */
 .header {
