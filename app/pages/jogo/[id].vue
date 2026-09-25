@@ -469,6 +469,7 @@
 definePageMeta({ layout: 'bare' })
 
 const route = useRoute()
+const intro = useIntroVideo()
 // Config tecnica do jogo: painel primeiro, constants/gameRoutes.ts como fallback.
 const { getCatalogadorQueries, getGameRouteConfig, resolveGameRouteId } = useGameRoutes()
 const { isAuthenticated, balance, fetchUserProfile } = useAuth()
@@ -1517,7 +1518,15 @@ const retryFromModal = async () => {
 }
 
 // Carrega o jogo ao montar o componente
-onMounted(() => {
+onMounted(async () => {
+  // Video de boas-vindas: quem ainda nao assistiu volta para a home com o
+  // pop-up aberto, em vez de entrar no jogo direto pela URL.
+  await intro.load()
+  if (intro.required.value) {
+    intro.show(route.fullPath)
+    return navigateTo('/')
+  }
+
   loadGame()
   fetchResults()
 })

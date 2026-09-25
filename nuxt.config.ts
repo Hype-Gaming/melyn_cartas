@@ -41,7 +41,7 @@ export default defineNuxtConfig({
     }
   },
 
-  css: [],
+  css: ['~/assets/css/tokens.css'],
 
   modules: [routeRulesTemplateModule, '@nuxt/icon'],
 

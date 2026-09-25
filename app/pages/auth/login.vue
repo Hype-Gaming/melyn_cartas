@@ -115,6 +115,8 @@ import { BRANDS, type BrandConfig } from "../../../shared/brands";
 
 definePageMeta({
     layout: "bare",
+    // /auth/login e a rota canonica; /login existe so para links antigos.
+    alias: ["/login"],
 });
 
 const brands = BRANDS;
